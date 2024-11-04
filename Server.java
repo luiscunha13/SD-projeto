@@ -73,7 +73,31 @@ class Users_Database{
         return answer;
     }
 
-    // funções que estão no enunciado
+    void multiPut(Map<String, byte[]> pairs){
+        l.lock();
+
+        try{
+            users_database.putAll(pairs);
+        }finally{
+            l.unlock();
+        }
+    }
+
+    Map<String, byte[]> multiGet(Set<String> keys){
+        Map<String, byte[]> m = new HashMap<>();
+
+        try{
+            for(String s : keys)
+                if(users_database.containsKey(s))
+                    m.put(s, users_database.get(s));
+        }finally{
+            l.unlock();
+        }
+
+        return m;
+    }
+
+
 }
 
 public class Server {

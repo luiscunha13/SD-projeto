@@ -1,7 +1,7 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.InputMismatchException;
-import java.util.Scanner;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class Client {
 
@@ -60,9 +60,106 @@ public class Client {
     }
 
     public void OptionsHandler(){
-        int option = Options();
+        Scanner scanner = new Scanner(System.in);
+        String input, input1, input2;
+        boolean exit=false;
+        byte[] bytes=null;
 
-        
+        while(running){
+            int option = Options();
+
+            if(!login){
+                switch(option){
+                    case 1: // login
+                        System.out.println("Enter username:");
+                        input = scanner.nextLine();
+                        System.out.println("Enter password:");
+                        input1 = scanner.nextLine();
+
+                        //...
+                        break;
+                    case 2: // register
+                        System.out.println("Enter username:");
+                        input = scanner.nextLine();
+                        System.out.println("Enter password:");
+                        input1 = scanner.nextLine();
+                        System.out.println("Confirm password:");
+                        input2 = scanner.nextLine();
+
+                        if(input1.equals(input2)){
+                            //meter no pacote
+                        }
+                        else{
+                            System.out.println("Password not confirmed...");
+                        }
+                        //...
+                        break;
+                    case 3: // exit
+                        running=false;
+                    default:
+                        break;
+                }
+            }
+            else{
+                switch(option){
+                    case 1: // store data
+                        System.out.println("Enter key:");
+                        input = scanner.nextLine();
+                        System.out.println("Enter data:");
+                        input1 = scanner.nextLine();
+                        bytes = input1.getBytes(StandardCharsets.UTF_8); // não sei se é bem assim que eles querem
+                        //...
+                        break;
+                    case 2: // read data
+                        System.out.println("Enter key:");
+                        input = scanner.nextLine();
+                        //...
+                        break;
+                    case 3: // store multi data
+                        Map<String, byte[]> pairs = new HashMap<>();
+                        while(!exit){
+                            System.out.println("Enter key or write exit to stop:");
+                            input = scanner.nextLine();
+                            if(input.equals("exit"))
+                                exit = true;
+                            else{
+                                System.out.println("Enter data:");
+                                input1 = scanner.nextLine();
+                                bytes = input1.getBytes(StandardCharsets.UTF_8);
+                                pairs.put(input,bytes);
+                            }
+                        }
+                        //...
+                        break;
+                    case 4: // read multi data
+                        Set<String> list = new HashSet<>();
+                        System.out.println("Enter key or write exit to stop:");
+
+                        while(!exit){
+                            System.out.println("Enter key :");
+                            input = scanner.nextLine();
+                            if(input.equals("exit"))
+                                exit = true;
+                            else{
+                                list.add(input);
+                            }
+                        }
+
+                        //...
+                        break;
+                    case 5: // exit
+                        running=false;
+                    default:
+                        break;
+
+                }
+            }
+
+
+        }
+
+
+
     }
 
     public static void main(String[] args){
