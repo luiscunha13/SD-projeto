@@ -1,3 +1,5 @@
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -100,68 +102,136 @@ class Users_Database{
 
 }
 
-public class Server {
-    Lock l = new ReentrantLock();
+class ClientHandler implements Runnable{
+    private Socket socket;
+    private Users users;
+    private Users_Database users_database;
 
-    public void Main(String[] args) throws IOException{
-        Server server = new Server();
-        server.start(server);
+    private DataOutputStream out;
+    private DataInputStream in;
+
+    private Server server;
+
+    public boolean running=true; //condição de paragem do handler
+    public boolean login=false; //muda para true quando iniciar sessão
+    //false ->mostra as opções de registar e de login , true -> mostra o resto das opções
+
+    public ClientHandler(Socket socket, Users users, Users_Database users_database, Server server) throws IOException{
+        this.socket = socket;
+        this.users = users;
+        this.users_database = users_database;
+        this.server = server;
+        in = new DataInputStream(socket.getInputStream());
+        out = new DataOutputStream(socket.getOutputStream());
     }
 
-    private void start(Server server) throws IOException {
-        ServerSocket socket = null;
+    @Override
+    public void run(){
+        try{
+            String message = in.readUTF();
+
+            while(true){
+                switch(message){
+                    case "login": {
+                        String username = in.readUTF();
+                        String password = in.readUTF();
+                        if (users.login(username, password))
+                            login = true;
+                        out.writeUTF("login");
+                        out.writeBoolean(login);
+                        break;
+                    }
+                    case "register": {
+                        String username = in.readUTF();
+                        String password = in.readUTF();
+                        if (users.register(username, password))
+                            login = true;
+                        out.writeUTF("register");
+                        out.writeBoolean(login);
+                        break;
+                    }
+                }
+            }
+
+        }catch (Exception e){
+            System.out.println(e);
+
+        }
+
+
+        while (running) {
+            //mostrar o menu das opções no terminal
+            try{
+
+            } catch (Exception e){
+                e.printStackTrace();
+            } finally{
+                try{
+                    socket.close();
+
+                }catch(IOException e){
+                    e.printStackTrace();
+                }
+                server.clientDisconnected();
+            }
+
+        }
+    }
+}
+
+
+public class Server {
+    Lock l = new ReentrantLock();
+    private final Condition sessionAvailable = l.newCondition();
+    int maxSessions;
+    private int activeSessions = 0;
+
+    public void clientDisconnected() {
+        l.lock();
+        try {
+            activeSessions--;
+            sessionAvailable.signal();
+        } finally {
+            l.unlock();
+        }
+    }
+
+    public void Main(String[] args) throws IOException{
+        ServerSocket ss = null;
+        maxSessions = Integer.parseInt(args[0]);
 
         try{
-            socket = new ServerSocket(6666);
+            ss = new ServerSocket(6666);
             Users users = new Users();
             Users_Database users_database = new Users_Database();
 
-            System.out.println("Server listening for clients on port: " + socket);
+            System.out.println("Server listening for clients on port: " + ss.getLocalPort());
 
             while(true){
-                Socket clientSocket = socket.accept();
+                Socket socket = ss.accept();
 
-                new Thread(new ClientHandler(clientSocket,server,users,users_database)).start();
+                l.lock();
+                try {
+                    while (activeSessions >= maxSessions) {
+                        sessionAvailable.await();
+                    }
+                    activeSessions++;
+                } finally {
+                    l.unlock();
+                }
+
+                new Thread(new ClientHandler(socket,users,users_database,this)).start();
             }
 
         } catch(Exception e){
             e.printStackTrace();
         } finally {
-            if (socket != null && !socket.isClosed()) {
-                socket.close();
+            if (ss != null && !ss.isClosed()) {
+                ss.close();
             }
         }
     }
 
 }
 
-class ClientHandler implements Runnable{
-    private Socket client_socket;
-    private Server server;
-    private Users users;
-    private Users_Database users_database;
 
-    public boolean running=true; //condição de paragem do handler
-    public boolean login=false; //muda para true quando iniciar sessão
-                                //false ->mostra as opções de registar e de login , true -> mostra o resto das opções
-
-    public ClientHandler(Socket client_socket,Server server, Users users, Users_Database users_database){
-        this.client_socket = client_socket;
-        this.server = server;
-        this.users = users;
-        this.users_database = users_database;
-    }
-
-    @Override
-    public void run(){
-
-
-        while (running) {
-            //mostrar o menu das opções no terminal
-
-        }
-    }
-
-
-
-}
