@@ -89,15 +89,17 @@ public class Client_Interface {
         menu.execute();
     }
 
-    public void readData(){
+    public void readData() throws IOException {
         clearTerminal();
         System.out.println("READ DATA \n");
 
         System.out.println("Key: ");
         String key = sc.nextLine();
+
+        client.readData(key);
     }
 
-    public void storeData(){
+    public void storeData() throws IOException {
         clearTerminal();
         System.out.println("STORE DATA \n");
 
@@ -107,15 +109,50 @@ public class Client_Interface {
         System.out.println("Data: ");
         String data = sc.nextLine();
 
+        client.storeData(key, data);
 
     }
 
-    public void readMultiData(){
+    public void readMultiData() throws IOException {
+        clearTerminal();
+        System.out.println("READ MULTI DATA \n");
 
+        Set<String> list = new HashSet<>();
+        String input;
+
+        while(true){
+            System.out.println("Enter key or write exit to stop:");
+            input = sc.nextLine();
+            if(input.equals("exit"))
+                break;
+            else{
+                list.add(input);
+            }
+        }
+
+        client.readMultiData(list);
     }
 
-    public void storeMultiData(){
+    public void storeMultiData() throws IOException {
+        clearTerminal();
+        System.out.println("STORE MULTI DATA \n");
 
+        Map<String, String> pairs = new HashMap<>();
+        String key, data;
+
+        while(true){
+            System.out.println("Enter key or write exit to stop:");
+            key = sc.nextLine();
+            if(key.equals("exit"))
+                break;
+            else{
+                System.out.println("Enter data:");
+                data = sc.nextLine();
+                pairs.put(key,data);
+            }
+        }
+
+        client.storeMultiData(pairs);
     }
 
     public void clearTerminal(){
@@ -123,72 +160,4 @@ public class Client_Interface {
         System.out.flush();
     }
 
-    public void OptionsHandler(){
-        String input, input1, input2;
-        boolean exit=false;
-        byte[] bytes=null;
-
-        while(running){
-            int option = Options();
-
-                switch(option){
-                    case 1: // store data
-                        System.out.println("Enter key:");
-                        input = sc.nextLine();
-                        System.out.println("Enter data:");
-                        input1 = sc.nextLine();
-                        bytes = input1.getBytes();
-                        //...
-                        break;
-                    case 2: // read data
-                        System.out.println("Enter key:");
-                        input = sc.nextLine();
-                        //...
-                        break;
-                    case 3: // store multi data
-                        Map<String, byte[]> pairs = new HashMap<>();
-                        while(!exit){
-                            System.out.println("Enter key or write exit to stop:");
-                            input = sc.nextLine();
-                            if(input.equals("exit"))
-                                exit = true;
-                            else{
-                                System.out.println("Enter data:");
-                                input1 = sc.nextLine();
-                                bytes = input1.getBytes();
-                                pairs.put(input,bytes);
-                            }
-                        }
-                        //...
-                        break;
-                    case 4: // read multi data
-                        Set<String> list = new HashSet<>();
-                        System.out.println("Enter key or write exit to stop:");
-
-                        while(!exit){
-                            System.out.println("Enter key :");
-                            input = sc.nextLine();
-                            if(input.equals("exit"))
-                                exit = true;
-                            else{
-                                list.add(input);
-                            }
-                        }
-
-                        //...
-                        break;
-                    case 5: // exit
-                        running=false;
-                    default:
-                        break;
-
-                }
-
-
-
-        }
-
-
-
-    }
 }

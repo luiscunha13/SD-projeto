@@ -128,9 +128,10 @@ class ClientHandler implements Runnable{
     @Override
     public void run(){
         try{
-            String message = in.readUTF();
+            int exit=0;
 
-            while(true){
+            while(exit==0){
+                String message = in.readUTF();
                 switch(message){
                     case "login": {
                         String username = in.readUTF();
@@ -150,7 +151,33 @@ class ClientHandler implements Runnable{
                         out.writeBoolean(login);
                         break;
                     }
+                    case "read": {
+                        String key = in.readUTF();
+                        byte[] data = users_database.get(key);
+                        String answer;
+                        if(data == null)
+                            answer = "null";
+                        else
+                            answer = data.toString();
+
+                        out.writeUTF(answer);
+
+                        break;
+                    }
+                    case "store":{
+                        String key = in.readUTF();
+                        String data = in.readUTF();
+                        byte[] bdata = data.getBytes();
+                        users_database.put(key,bdata);
+
+                        break;
+                    }
+                    case "exit": {
+                        exit=1;
+                        break;
+                    }
                 }
+                out.flush();
             }
 
         }catch (Exception e){

@@ -2,6 +2,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.*;
 
 public class Client {
 
@@ -39,6 +40,50 @@ public class Client {
             answer = in.readUTF();
         }
         return in.readBoolean();
+    }
+
+    public String readData(String key) throws IOException { // ver depois se tem de ser byte[] ou pode ser string
+        out.writeUTF("read");
+        out.writeUTF(key);
+        out.flush();
+
+        String answer = in.readUTF();
+        while(!answer.equals("read")){
+            answer = in.readUTF();
+        }
+
+        return answer;
+
+    }
+
+    public String storeData(String key, String data) throws IOException { // aqui afinal não deve devolver string
+        out.writeUTF("store");
+        out.writeUTF(key);
+        out.writeUTF(data);
+        out.flush();
+
+        String answer = in.readUTF();
+        while(!answer.equals("store")){
+            answer = in.readUTF();
+        }
+        return answer;
+    }
+
+    public Map<String, String> readMultiData(Set<String> keys) throws IOException{
+        out.writeUTF("readmulti");
+        out.writeInt(keys.size());
+        for (String s: keys)
+            out.writeUTF(s);
+        
+    }
+
+    public void storeMultiData(Map<String,String> keysdata) throws IOException{
+        out.writeUTF("storemulti");
+        out.writeInt(keysdata.size());
+        for (Map.Entry<String,String> e: keysdata.entrySet()){
+            out.writeUTF(e.getKey());
+            out.writeUTF(e.getValue());
+        }
     }
 
 
