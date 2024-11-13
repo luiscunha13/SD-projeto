@@ -92,6 +92,8 @@ class Users_Database{
             for(String s : keys)
                 if(users_database.containsKey(s))
                     m.put(s, users_database.get(s));
+                else
+                    m.put(s,null);
         }finally{
             l.unlock();
         }
@@ -158,8 +160,9 @@ class ClientHandler implements Runnable{
                         if(data == null)
                             answer = "null";
                         else
-                            answer = data.toString();
+                            answer = Arrays.toString(data);
 
+                        out.writeUTF("read");
                         out.writeUTF(answer);
 
                         break;
@@ -170,6 +173,47 @@ class ClientHandler implements Runnable{
                         byte[] bdata = data.getBytes();
                         users_database.put(key,bdata);
 
+                        out.writeUTF("store");
+
+                        break;
+                    }
+                    case "readmulti":{
+                        int size = in.readInt();
+                        Set<String> s = new HashSet<>();
+                        for(int i=0;i<size;i++)
+                            s.add(in.readUTF());
+
+                        Map<String,byte[]> m = users_database.multiGet(s);
+
+                        out.writeUTF("readmulti");
+                        out.writeInt(m.size());
+                        for (Map.Entry<String,byte[]> e: m.entrySet()){
+                            out.writeUTF(e.getKey());
+                            byte[] data = e.getValue();
+                            String answer;
+                            if(data==null)
+                                answer = "null";
+                            else
+                                answer =  Arrays.toString(data); // ver depois se é assim que se converte para string
+                            out.writeUTF(answer);
+                        }
+
+                        break;
+                    }
+                    case "storemulti":{
+                        int size = in.readInt();
+                        Map<String,byte[]> m = new HashMap<>();
+                        for(int i=0;i<size;i++){
+                            String key = in.readUTF();
+                            String data = in.readUTF();
+                            byte[] bdata = data.getBytes();
+                            m.put(key,bdata);
+                        }
+
+                        users_database.multiPut(m);
+
+                        out.writeUTF("storemulti");
+
                         break;
                     }
                     case "exit": {
@@ -178,30 +222,19 @@ class ClientHandler implements Runnable{
                     }
                 }
                 out.flush();
+                server.clientDisconnected();
             }
 
         }catch (Exception e){
             System.out.println(e);
-
-        }
-
-
-        while (running) {
-            //mostrar o menu das opções no terminal
+        }finally {
             try{
+                socket.close();
 
-            } catch (Exception e){
+            }catch(IOException e){
                 e.printStackTrace();
-            } finally{
-                try{
-                    socket.close();
-
-                }catch(IOException e){
-                    e.printStackTrace();
-                }
-                server.clientDisconnected();
             }
-
+            server.clientDisconnected();
         }
     }
 }

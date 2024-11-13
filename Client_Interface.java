@@ -11,7 +11,7 @@ public class Client_Interface {
 
     Menu menu;
 
-    public Client_Interface(){
+    public Client_Interface() throws IOException {
         clearTerminal();
         this.menu = new Menu(new String[]{
                 "\nAUTHENTICATION OPTIONS\n",
@@ -70,7 +70,7 @@ public class Client_Interface {
         this.clientMenu();
     }
 
-    public void clientMenu(){
+    public void clientMenu() throws IOException {
         clearTerminal();
         this.menu = new Menu(new String[]{
                 "\nCLIENT MENU\n",
@@ -96,7 +96,15 @@ public class Client_Interface {
         System.out.println("Key: ");
         String key = sc.nextLine();
 
-        client.readData(key);
+        String data = client.readData(key);
+
+        if(data.equals("null"))
+            System.out.println("The key " + key + " does not exist");
+        else
+            System.out.println("Data: "+ data);
+
+        pressAnyKey();
+        clientMenu();
     }
 
     public void storeData() throws IOException {
@@ -109,7 +117,13 @@ public class Client_Interface {
         System.out.println("Data: ");
         String data = sc.nextLine();
 
-        client.storeData(key, data);
+        boolean b = client.storeData(key, data);
+
+        if(b)
+            System.out.println("Values stored successfully");
+
+        pressAnyKey();
+        clientMenu();
 
     }
 
@@ -130,7 +144,17 @@ public class Client_Interface {
             }
         }
 
-        client.readMultiData(list);
+        Map<String, String> m = client.readMultiData(list);
+
+        for (Map.Entry<String,String> e: m.entrySet()){
+            if(e.getValue().equals("null"))
+                System.out.println("The key " + e.getKey() + " does not exist");
+            else
+                System.out.println("Key: " + e.getKey() + "   Data: " + e.getValue());
+        }
+
+        pressAnyKey();
+        clientMenu();
     }
 
     public void storeMultiData() throws IOException {
@@ -152,12 +176,23 @@ public class Client_Interface {
             }
         }
 
-        client.storeMultiData(pairs);
+        boolean b = client.storeMultiData(pairs);
+
+        if(b)
+            System.out.println("Values stored successfully");
+
+        pressAnyKey();
+        clientMenu();
     }
 
     public void clearTerminal(){
         System.out.print("\033[H\033[2J");
         System.out.flush();
+    }
+
+    public void pressAnyKey(){
+        System.out.println("Press any key to continue");
+        String x = sc.nextLine();
     }
 
 }

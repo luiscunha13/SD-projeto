@@ -18,7 +18,7 @@ public class Menu {
         }); // fui buscar isto ao projeto de poo mas nem sei o que significa
     }
 
-    public void execute() {
+    public void execute() throws IOException {
         int op=-1;
         while(op!=0){
             showMenu();

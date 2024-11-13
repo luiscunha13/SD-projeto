@@ -56,7 +56,7 @@ public class Client {
 
     }
 
-    public String storeData(String key, String data) throws IOException { // aqui afinal não deve devolver string
+    public Boolean storeData(String key, String data) throws IOException { // aqui afinal não deve devolver string
         out.writeUTF("store");
         out.writeUTF(key);
         out.writeUTF(data);
@@ -66,7 +66,8 @@ public class Client {
         while(!answer.equals("store")){
             answer = in.readUTF();
         }
-        return answer;
+
+        return true;
     }
 
     public Map<String, String> readMultiData(Set<String> keys) throws IOException{
@@ -74,16 +75,37 @@ public class Client {
         out.writeInt(keys.size());
         for (String s: keys)
             out.writeUTF(s);
-        
+
+        String answer = in.readUTF();
+        while(!answer.equals("readmulti")){
+            answer = in.readUTF();
+        }
+
+        int size = in.readInt();
+        Map<String,String> m = new HashMap<>();
+        for(int i=0;i<size;i++){
+            String key = in.readUTF();
+            String data = in.readUTF();
+            m.put(key,data);
+        }
+
+        return m;
     }
 
-    public void storeMultiData(Map<String,String> keysdata) throws IOException{
+    public boolean storeMultiData(Map<String,String> keysdata) throws IOException{
         out.writeUTF("storemulti");
         out.writeInt(keysdata.size());
         for (Map.Entry<String,String> e: keysdata.entrySet()){
             out.writeUTF(e.getKey());
             out.writeUTF(e.getValue());
         }
+
+        String answer = in.readUTF();
+        while(!answer.equals("storemulti")){
+            answer = in.readUTF();
+        }
+
+        return true;
     }
 
 
@@ -94,8 +116,6 @@ public class Client {
             in = new DataInputStream(socket.getInputStream());
 
             Client_Interface ci = new Client_Interface();
-
-            ci.OptionsHandler();
 
 
         }catch(Exception e){
