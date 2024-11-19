@@ -99,12 +99,12 @@ public class Client_Interface {
         System.out.println("Key: ");
         String key = sc.nextLine();
 
-        String data = client.readData(key);
+        byte[] data = client.get(key);
 
-        if(data.equals("null"))
+        if(data==null)
             System.out.println("The key " + key + " does not exist");
-        else
-            System.out.println("Data: "+ data);
+        //else
+            //System.out.println("Data: "+ data);   ver uma forma de fazer parse aos dados que chegam
 
         pressAnyKey();
         clientMenu();
@@ -118,12 +118,11 @@ public class Client_Interface {
         String key = sc.nextLine();
 
         System.out.println("Data: ");
-        String data = sc.nextLine();
+        String dataString = sc.nextLine();
 
-        boolean b = client.storeData(key, data);
+        client.put(key, dataString.getBytes()); //verificar se essa função é a adequada
 
-        if(b)
-            System.out.println("Values stored successfully");
+        System.out.println("Values stored successfully");
 
         pressAnyKey();
         clientMenu();
@@ -134,7 +133,7 @@ public class Client_Interface {
         clearTerminal();
         System.out.println("READ MULTI DATA \n");
 
-        Set<String> list = new HashSet<>();
+        Set<String> set = new HashSet<>();
         String input;
 
         while(true){
@@ -143,17 +142,17 @@ public class Client_Interface {
             if(input.equals("exit"))
                 break;
             else{
-                list.add(input);
+                set.add(input);
             }
         }
 
-        Map<String, String> m = client.readMultiData(list);
+        Map<String, byte[]> m = client.multiGet(set);
 
-        for (Map.Entry<String,String> e: m.entrySet()){
-            if(e.getValue().equals("null"))
+        for (Map.Entry<String,byte[]> e: m.entrySet()){
+            if(e.getValue()==null)
                 System.out.println("The key " + e.getKey() + " does not exist");
-            else
-                System.out.println("Key: " + e.getKey() + "   Data: " + e.getValue());
+           // else
+          //      System.out.println("Key: " + e.getKey() + "   Data: " + e.getValue()); //igual ao de cima
         }
 
         pressAnyKey();
@@ -164,8 +163,8 @@ public class Client_Interface {
         clearTerminal();
         System.out.println("STORE MULTI DATA \n");
 
-        Map<String, String> pairs = new HashMap<>();
-        String key, data;
+        Map<String, byte[]> pairs = new HashMap<>();
+        String key, dataString;
 
         while(true){
             System.out.println("Enter key or write exit to stop:");
@@ -174,15 +173,14 @@ public class Client_Interface {
                 break;
             else{
                 System.out.println("Enter data:");
-                data = sc.nextLine();
-                pairs.put(key,data);
+                dataString = sc.nextLine();
+                pairs.put(key, dataString.getBytes()); //igual ao de cima
             }
         }
 
-        boolean b = client.storeMultiData(pairs);
+        client.multiPut(pairs);
 
-        if(b)
-            System.out.println("Values stored successfully");
+        System.out.println("Values stored successfully");
 
         pressAnyKey();
         clientMenu();

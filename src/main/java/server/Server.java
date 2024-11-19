@@ -12,7 +12,7 @@ import java.util.concurrent.locks.*;
 public class Server {
     Lock l = new ReentrantLock();
     private final Condition sessionAvailable = l.newCondition();
-    private int maxSessions;
+    private final int maxSessions;
     private int activeSessions = 0;
 
     public Server(int maxSessions) {
@@ -23,7 +23,7 @@ public class Server {
         l.lock();
         try {
             activeSessions--;
-            sessionAvailable.signal();
+            sessionAvailable.signal(); //signalAll? acho que tem que ser
         } finally {
             l.unlock();
         }

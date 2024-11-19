@@ -37,6 +37,8 @@ class ClientHandler implements Runnable {
         try {
             int exit = 0;
 
+            //considerar aqui em vez de mandar uma string sobre o que fazer, mandar bytes tambem
+
             while (exit == 0) {
                 String message = in.readUTF();
                 switch (message) {
@@ -61,22 +63,16 @@ class ClientHandler implements Runnable {
                     case "read": {
                         String key = in.readUTF();
                         byte[] data = users_database.get(key);
-                        String answer;
-                        if (data == null)
-                            answer = "null";
-                        else
-                            answer = Arrays.toString(data);
 
                         out.writeUTF("read");
-                        out.writeUTF(answer);
+                        out.write(data);
 
                         break;
                     }
                     case "store": {
                         String key = in.readUTF();
-                        String data = in.readUTF();
-                        byte[] bdata = data.getBytes();
-                        users_database.put(key, bdata);
+                        byte[] data = in.readAllBytes();
+                        users_database.put(key, data);
 
                         out.writeUTF("store");
 
@@ -94,15 +90,8 @@ class ClientHandler implements Runnable {
                         out.writeInt(m.size());
                         for (Map.Entry<String, byte[]> e : m.entrySet()) {
                             out.writeUTF(e.getKey());
-                            byte[] data = e.getValue();
-                            String answer;
-                            if (data == null)
-                                answer = "null";
-                            else
-                                answer = Arrays.toString(data); // ver depois se é assim que se converte para string
-                            out.writeUTF(answer);
+                            out.write(e.getValue());
                         }
-
                         break;
                     }
                     case "storemulti": {
@@ -110,9 +99,8 @@ class ClientHandler implements Runnable {
                         Map<String, byte[]> m = new HashMap<>();
                         for (int i = 0; i < size; i++) {
                             String key = in.readUTF();
-                            String data = in.readUTF();
-                            byte[] bdata = data.getBytes();
-                            m.put(key, bdata);
+                            byte[] data = in.readAllBytes();
+                            m.put(key, data);
                         }
 
                         users_database.multiPut(m);

@@ -13,7 +13,7 @@ public class Client {
 
     private static DataOutputStream out;
     private static DataInputStream in;
-;
+
     public boolean running=true; //condição de paragem do handler
     public boolean login=false;
 
@@ -44,7 +44,7 @@ public class Client {
         return in.readBoolean();
     }
 
-    public String readData(String key) throws IOException { // ver depois se tem de ser byte[] ou pode ser string
+    public byte[] get(String key) throws IOException {
         out.writeUTF("read");
         out.writeUTF(key);
         out.flush();
@@ -54,14 +54,13 @@ public class Client {
             answer = in.readUTF();
         }
 
-        return answer;
-
+        return in.readAllBytes();
     }
 
-    public Boolean storeData(String key, String data) throws IOException { // aqui afinal não deve devolver string
+    public void put(String key, byte[] value) throws IOException {
         out.writeUTF("store");
         out.writeUTF(key);
-        out.writeUTF(data);
+        out.write(value);
         out.flush();
 
         String answer = in.readUTF();
@@ -69,10 +68,9 @@ public class Client {
             answer = in.readUTF();
         }
 
-        return true;
     }
 
-    public Map<String, String> readMultiData(Set<String> keys) throws IOException{
+    public Map<String, byte[]> multiGet(Set<String> keys) throws IOException{
         out.writeUTF("readmulti");
         out.writeInt(keys.size());
         for (String s: keys)
@@ -84,22 +82,22 @@ public class Client {
         }
 
         int size = in.readInt();
-        Map<String,String> m = new HashMap<>();
+        Map<String,byte[]> m = new HashMap<>();
         for(int i=0;i<size;i++){
             String key = in.readUTF();
-            String data = in.readUTF();
+            byte[] data = in.readAllBytes();
             m.put(key,data);
         }
 
         return m;
     }
 
-    public boolean storeMultiData(Map<String,String> keysdata) throws IOException{
+    public void multiPut(Map<String,byte[]> pairs) throws IOException{
         out.writeUTF("storemulti");
-        out.writeInt(keysdata.size());
-        for (Map.Entry<String,String> e: keysdata.entrySet()){
+        out.writeInt(pairs.size());
+        for (Map.Entry<String,byte[]> e: pairs.entrySet()){
             out.writeUTF(e.getKey());
-            out.writeUTF(e.getValue());
+        //    out.writeUTF(e.getValue());
         }
 
         String answer = in.readUTF();
@@ -107,7 +105,6 @@ public class Client {
             answer = in.readUTF();
         }
 
-        return true;
     }
 
 
