@@ -37,12 +37,10 @@ class ClientHandler implements Runnable {
         try {
             int exit = 0;
 
-            //considerar aqui em vez de mandar uma string sobre o que fazer, mandar bytes tambem
-
             while (exit == 0) {
-                String message = in.readUTF();
-                switch (message) {
-                    case "login": {
+                int choice = in.readInt();
+                switch (choice) {
+                    case 0: { //login
                         String username = in.readUTF();
                         String password = in.readUTF();
                         if (users.login(username, password))
@@ -51,7 +49,7 @@ class ClientHandler implements Runnable {
                         out.writeBoolean(login);
                         break;
                     }
-                    case "register": {
+                    case 1: { //register
                         String username = in.readUTF();
                         String password = in.readUTF();
                         if (users.register(username, password))
@@ -60,7 +58,7 @@ class ClientHandler implements Runnable {
                         out.writeBoolean(login);
                         break;
                     }
-                    case "read": {
+                    case 2: { //read
                         String key = in.readUTF();
                         byte[] data = users_database.get(key);
 
@@ -69,7 +67,7 @@ class ClientHandler implements Runnable {
 
                         break;
                     }
-                    case "store": {
+                    case 3: { //write
                         String key = in.readUTF();
                         byte[] data = in.readAllBytes();
                         users_database.put(key, data);
@@ -78,7 +76,7 @@ class ClientHandler implements Runnable {
 
                         break;
                     }
-                    case "readmulti": {
+                    case 4: { //multiread
                         int size = in.readInt();
                         Set<String> s = new HashSet<>();
                         for (int i = 0; i < size; i++)
@@ -94,7 +92,7 @@ class ClientHandler implements Runnable {
                         }
                         break;
                     }
-                    case "storemulti": {
+                    case 5: { //multiwrite
                         int size = in.readInt();
                         Map<String, byte[]> m = new HashMap<>();
                         for (int i = 0; i < size; i++) {
@@ -109,7 +107,7 @@ class ClientHandler implements Runnable {
 
                         break;
                     }
-                    case "exit": {
+                    case 6: { //close
                         exit = 1;
                         break;
                     }

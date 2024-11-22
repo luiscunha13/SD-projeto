@@ -8,7 +8,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.locks.*;
 
-
 public class Server {
     Lock l = new ReentrantLock();
     private final Condition sessionAvailable = l.newCondition();

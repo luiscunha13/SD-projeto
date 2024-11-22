@@ -18,7 +18,7 @@ public class Client {
     public boolean login=false;
 
     public boolean login(String username, String password) throws IOException {
-        out.writeUTF("login");
+        out.writeInt(0);
         out.writeUTF(username);
         out.writeUTF(password);
         out.flush();
@@ -32,7 +32,7 @@ public class Client {
     }
 
     public boolean register(String username, String password) throws IOException {
-        out.writeUTF("register");
+        out.writeInt(1);
         out.writeUTF(username);
         out.writeUTF(password);
         out.flush();
@@ -45,7 +45,7 @@ public class Client {
     }
 
     public byte[] get(String key) throws IOException {
-        out.writeUTF("read");
+        out.writeInt(2);
         out.writeUTF(key);
         out.flush();
 
@@ -58,7 +58,7 @@ public class Client {
     }
 
     public void put(String key, byte[] value) throws IOException {
-        out.writeUTF("store");
+        out.writeInt(3);
         out.writeUTF(key);
         out.write(value);
         out.flush();
@@ -71,7 +71,7 @@ public class Client {
     }
 
     public Map<String, byte[]> multiGet(Set<String> keys) throws IOException{
-        out.writeUTF("readmulti");
+        out.writeInt(4);
         out.writeInt(keys.size());
         for (String s: keys)
             out.writeUTF(s);
@@ -93,7 +93,7 @@ public class Client {
     }
 
     public void multiPut(Map<String,byte[]> pairs) throws IOException{
-        out.writeUTF("storemulti");
+        out.writeInt(6);
         out.writeInt(pairs.size());
         for (Map.Entry<String,byte[]> e: pairs.entrySet()){
             out.writeUTF(e.getKey());

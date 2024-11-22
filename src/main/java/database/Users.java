@@ -22,7 +22,6 @@ public class Users {
         } finally {
             l.unlock();
         }
-
         return out;
     }
 
