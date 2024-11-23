@@ -5,6 +5,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Client {
 
@@ -13,48 +15,86 @@ public class Client {
 
     private static DataOutputStream out;
     private static DataInputStream in;
+    Lock ls = new ReentrantLock();
+    Lock lr = new ReentrantLock();
 
     public boolean running=true; //condição de paragem do handler
     public boolean login=false;
 
     public boolean login(String username, String password) throws IOException {
-        out.writeInt(0);
-        out.writeUTF(username);
-        out.writeUTF(password);
-        out.flush();
-
-        String answer = in.readUTF();
-        while(!answer.equals("login")){
-            answer = in.readUTF();
+        ls.lock();
+        try{
+            out.writeInt(0);
+            out.writeUTF(username);
+            out.writeUTF(password);
+            out.flush();
+        }finally {
+            ls.unlock();
         }
-        return in.readBoolean();
+
+        lr.lock();
+        try{
+            int answer = in.readInt();
+            while(answer!=0){
+                answer = in.readInt();
+            }
+
+            return in.readBoolean();
+        }finally {
+            lr.unlock();
+        }
 
     }
 
     public boolean register(String username, String password) throws IOException {
-        out.writeInt(1);
-        out.writeUTF(username);
-        out.writeUTF(password);
-        out.flush();
-
-        String answer = in.readUTF();
-        while(!answer.equals("register")){
-            answer = in.readUTF();
+        ls.lock();
+        try{
+            out.writeInt(1);
+            out.writeUTF(username);
+            out.writeUTF(password);
+            out.flush();
+        }finally {
+            ls.unlock();
         }
-        return in.readBoolean();
+
+        lr.lock();
+        try{
+            int answer = in.readInt();
+            while(answer!=1){
+                answer = in.readInt();
+            }
+
+            return in.readBoolean();
+        }finally {
+            lr.unlock();
+        }
     }
 
     public byte[] get(String key) throws IOException {
-        out.writeInt(2);
-        out.writeUTF(key);
-        out.flush();
-
-        String answer = in.readUTF();
-        while(!answer.equals("read")){
-            answer = in.readUTF();
+        ls.lock();
+        try{
+            out.writeInt(2);
+            out.writeUTF(key);
+            out.flush();
+        }finally {
+            ls.unlock();
         }
 
-        return in.readAllBytes();
+        lr.lock();
+        try{
+            int answer = in.readInt();
+            while(answer!=2){
+                answer = in.readInt();
+            }
+
+            int len = in.readInt();
+            byte[] data = new byte[len];
+            in.readFully(data);
+
+            return data;
+        }finally {
+            lr.unlock();
+        }
     }
 
     public void put(String key, byte[] value) throws IOException {
@@ -63,9 +103,9 @@ public class Client {
         out.write(value);
         out.flush();
 
-        String answer = in.readUTF();
-        while(!answer.equals("store")){
-            answer = in.readUTF();
+        int answer = in.readInt();
+        while(answer!=3){
+            answer = in.readInt();
         }
 
     }
@@ -76,9 +116,9 @@ public class Client {
         for (String s: keys)
             out.writeUTF(s);
 
-        String answer = in.readUTF();
-        while(!answer.equals("readmulti")){
-            answer = in.readUTF();
+        int answer = in.readInt();
+        while(answer!=4){
+            answer = in.readInt();
         }
 
         int size = in.readInt();
@@ -100,9 +140,9 @@ public class Client {
         //    out.writeUTF(e.getValue());
         }
 
-        String answer = in.readUTF();
-        while(!answer.equals("storemulti")){
-            answer = in.readUTF();
+        int answer = in.readInt();
+        while(answer!=6){
+            answer = in.readInt();
         }
 
     }

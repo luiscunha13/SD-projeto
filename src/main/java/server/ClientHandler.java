@@ -1,5 +1,7 @@
 package server;
 
+import Connection.*;
+import client.User;
 import database.Users;
 import database.Users_Database;
 
@@ -8,72 +10,102 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 class ClientHandler implements Runnable {
-    private Socket socket;
+    private Connection con;
     private Users users;
     private Users_Database users_database;
 
     private DataOutputStream out;
     private DataInputStream in;
+    Lock ls = new ReentrantLock();
+    Lock lr = new ReentrantLock();
 
     private Server server;
 
-    public boolean running = true; //condição de paragem do handler
     public boolean login = false; //muda para true quando iniciar sessão
     //false ->mostra as opções de registar e de login , true -> mostra o resto das opções
 
-    public ClientHandler(Socket socket, Users users, Users_Database users_database, Server server) throws IOException {
-        this.socket = socket;
+    public ClientHandler(Connection con, Users users, Users_Database users_database, Server server) throws IOException {
+        this.con = con;
         this.users = users;
         this.users_database = users_database;
         this.server = server;
-        in = new DataInputStream(socket.getInputStream());
-        out = new DataOutputStream(socket.getOutputStream());
     }
 
     @Override
     public void run() {
-        try {
-            int exit = 0;
 
-            while (exit == 0) {
-                int choice = in.readInt();
-                switch (choice) {
+        int exit = 0;
+
+        while (exit == 0) {
+            try {
+                Frame f = con.receive();
+                switch (f.getType()) {
                     case 0: { //login
-                        String username = in.readUTF();
-                        String password = in.readUTF();
-                        if (users.login(username, password))
+                        User u = (User) f.getData();
+
+                        if (users.login(u.getUsername(), u.getPassword()))
                             login = true;
-                        out.writeUTF("login");
-                        out.writeBoolean(login);
+
+                        con.send(new Frame(0,true,login));
+
                         break;
                     }
                     case 1: { //register
-                        String username = in.readUTF();
-                        String password = in.readUTF();
-                        if (users.register(username, password))
+                        User u = (User) f.getData();
+                        String username;
+                        String password;
+
+                        if (users.register(u.getUsername(), u.getPassword()))
                             login = true;
-                        out.writeUTF("register");
-                        out.writeBoolean(login);
+
+                        con.send(new Frame(1,true,login));
+
                         break;
                     }
-                    case 2: { //read
-                        String key = in.readUTF();
+                    case 2: { //get
+                        String key;
+                        try {
+                            key = in.readUTF();
+                        } finally {
+                            lr.unlock();
+                        }
+
                         byte[] data = users_database.get(key);
 
-                        out.writeUTF("read");
-                        out.write(data);
+                        ls.lock();
+                        try {
+                            out.writeInt(2);
+                            out.writeInt(data.length);
+                            out.write(data);
+                            out.flush();
+                        } finally {
+                            lr.unlock();
+                        }
 
                         break;
                     }
-                    case 3: { //write
+                    case 3: { //put
+                        String key;
+                        int len;
+                        byte[] data;
+
+                        try {
+                            key = in.readUTF();
+                            len
+                                    data = in.readFully();
+                        } finally {
+                            lr.unlock();
+                        }
                         String key = in.readUTF();
-                        byte[] data = in.readAllBytes();
+                        byte[] data = in.readFully();
                         users_database.put(key, data);
 
-                        out.writeUTF("store");
-
+                        out.writeInt(3);
+                        out.flush();
                         break;
                     }
                     case 4: { //multiread
@@ -90,6 +122,7 @@ class ClientHandler implements Runnable {
                             out.writeUTF(e.getKey());
                             out.write(e.getValue());
                         }
+                        out.flush();
                         break;
                     }
                     case 5: { //multiwrite
@@ -104,7 +137,7 @@ class ClientHandler implements Runnable {
                         users_database.multiPut(m);
 
                         out.writeUTF("storemulti");
-
+                        out.flush();
                         break;
                     }
                     case 6: { //close
@@ -112,20 +145,16 @@ class ClientHandler implements Runnable {
                         break;
                     }
                 }
-                out.flush();
-                server.clientDisconnected();
+            } catch (Exception e) {
+                System.out.println(e);
             }
-
-        } catch (Exception e) {
-            System.out.println(e);
-        } finally {
-            try {
-                socket.close();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            server.clientDisconnected();
         }
+
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        server.clientDisconnected();
     }
 }

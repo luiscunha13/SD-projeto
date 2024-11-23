@@ -1,5 +1,6 @@
 package server;
 
+import Connection.Connection;
 import database.Users;
 import database.Users_Database;
 
@@ -18,11 +19,23 @@ public class Server {
         this.maxSessions = maxSessions;
     }
 
+    public void clientConnect() throws InterruptedException {
+        l.lock();
+        try {
+            while (activeSessions >= maxSessions) {
+                sessionAvailable.await();
+            }
+            activeSessions++;
+        } finally {
+            l.unlock();
+        }
+    }
+
     public void clientDisconnected() {
         l.lock();
         try {
             activeSessions--;
-            sessionAvailable.signal(); //signalAll? acho que tem que ser
+            sessionAvailable.signal(); //signalAll? acho que tem que ser (Luis) acho que não porque só 1 cliente é que vai conseguir entrar
         } finally {
             l.unlock();
         }
@@ -40,18 +53,11 @@ public class Server {
 
             while(true){
                 Socket socket = ss.accept();
+                Connection con = new Connection(socket);
 
-                l.lock();
-                try {
-                    while (activeSessions >= maxSessions) {
-                        sessionAvailable.await();
-                    }
-                    activeSessions++;
-                } finally {
-                    l.unlock();
-                }
+                clientConnect();
 
-                new Thread(new ClientHandler(socket,users,users_database,this)).start();
+                new Thread(new ClientHandler(con,users,users_database,this)).start();
             }
 
         } catch(Exception e){

@@ -1,0 +1,56 @@
+package Connection;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class Connection {
+    Socket socket;
+
+    DataInputStream in;
+    DataOutputStream out;
+    Lock ls = new ReentrantLock();
+    Lock lr = new ReentrantLock();
+
+    public Connection(Socket socket) throws IOException {
+        this.socket = socket;
+        this.in = new DataInputStream(socket.getInputStream());
+        this.out = new DataOutputStream(socket.getOutputStream());
+        this.ls = new ReentrantLock();
+        this.lr = new ReentrantLock();
+    }
+
+    public void send(Frame f) throws IOException{
+        ls.lock();
+        try{
+            f.send(out);
+        }finally{
+            ls.unlock();
+        }
+
+
+
+    }
+
+    public Frame receive() throws IOException, ClassNotFoundException{
+        lr.lock();
+        try{
+            Frame f = Frame.receive(in);
+            return f;
+        }finally {
+            lr.unlock();
+        }
+    }
+
+    public void close(){
+        try {
+            this.socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
