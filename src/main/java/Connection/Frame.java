@@ -1,10 +1,8 @@
 package Connection;
 
-import client.User;
-
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 public class Frame {
 
@@ -42,7 +40,8 @@ public class Frame {
                     User.send((User) data, out);
                 break;
             case 2:
-
+                if(answer)
+                    out.writeInt();
                 break;
             case 3:
                 break;
@@ -51,6 +50,26 @@ public class Frame {
             case 5:
                 break;
         }
+
+    }
+
+    public static Frame receive(DataInputStream in) throws IOException{
+        int type = in.readInt();
+        boolean answer = in.readBoolean();
+        Object data = null;
+        switch(type){
+            case 0:
+            case 1:
+                if(answer)
+                    data = in.readBoolean();
+                else
+                    data = User.receive(in);
+                break;
+            case 2:
+
+        }
+
+        return new Frame(type,answer,data);
 
     }
 

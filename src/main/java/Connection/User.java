@@ -1,10 +1,8 @@
-package client;
+package Connection;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class User {
     public String username;
@@ -31,10 +29,9 @@ public class User {
         out.writeUTF(u.password);
     }
 
-    public User receive(DataInputStream in) throws IOException{
+    public static User receive(DataInputStream in) throws IOException{
         String username = in.readUTF();
         String password = in.readUTF();
-        User u = new User(username,password);
-        return u;
+        return new User(username,password);
     }
 }

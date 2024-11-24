@@ -1,14 +1,13 @@
 package server;
 
 import Connection.*;
-import client.User;
+import Connection.User;
 import database.Users;
 import database.Users_Database;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -67,12 +66,7 @@ class ClientHandler implements Runnable {
                         break;
                     }
                     case 2: { //get
-                        String key;
-                        try {
-                            key = in.readUTF();
-                        } finally {
-                            lr.unlock();
-                        }
+                        String key = (String) f.getData();
 
                         byte[] data = users_database.get(key);
 

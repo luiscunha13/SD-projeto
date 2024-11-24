@@ -1,5 +1,8 @@
 package client;
 
+import Connection.Frame;
+import Connection.User;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -22,51 +25,30 @@ public class Client {
     public boolean login=false;
 
     public boolean login(String username, String password) throws IOException {
-        ls.lock();
+        User u = new User(username,password);
+        Frame f = new Frame(0,false,u);
+        f.send(out);
+
         try{
-            out.writeInt(0);
-            out.writeUTF(username);
-            out.writeUTF(password);
-            out.flush();
-        }finally {
-            ls.unlock();
+            Frame res = Frame.receive(in);
+
+            return (Boolean)res.getData();
+        }catch(Exception e){
+            return false;
         }
-
-        lr.lock();
-        try{
-            int answer = in.readInt();
-            while(answer!=0){
-                answer = in.readInt();
-            }
-
-            return in.readBoolean();
-        }finally {
-            lr.unlock();
-        }
-
     }
 
     public boolean register(String username, String password) throws IOException {
-        ls.lock();
-        try{
-            out.writeInt(1);
-            out.writeUTF(username);
-            out.writeUTF(password);
-            out.flush();
-        }finally {
-            ls.unlock();
-        }
+        User u = new User(username,password);
+        Frame f = new Frame(1,false,u);
+        f.send(out);
 
-        lr.lock();
         try{
-            int answer = in.readInt();
-            while(answer!=1){
-                answer = in.readInt();
-            }
+            Frame res = Frame.receive(in);
 
-            return in.readBoolean();
-        }finally {
-            lr.unlock();
+            return (Boolean)res.getData();
+        }catch(Exception e){
+            return false;
         }
     }
 

@@ -30,9 +30,6 @@ public class Connection {
         }finally{
             ls.unlock();
         }
-
-
-
     }
 
     public Frame receive() throws IOException, ClassNotFoundException{
