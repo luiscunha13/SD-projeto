@@ -3,6 +3,10 @@ package Connection;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class Frame {
 
@@ -34,20 +38,38 @@ public class Frame {
         switch(type){
             case 0: // o login e o registo mandam a mesma cena (username e password) e recebem na mesma um boolean
             case 1:
-                if(answer)
+                if(answer){
                     out.writeBoolean((boolean) data);
+                    out.flush();
+                }
                 else
                     User.send((User) data, out);
                 break;
             case 2:
-                if(answer)
-                    out.writeInt();
+                if(!answer)
+                    PutOne.send((PutOne) data, out);
                 break;
             case 3:
+                if(answer){
+                    byte[] value = (byte[]) data;
+                    out.writeInt(value.length);
+                    out.write(value);
+                }
+                else
+                    out.writeUTF((String) data);
+
+                out.flush();
                 break;
             case 4:
+                if(answer)
+                    sendMap(data,out);
                 break;
             case 5:
+                if(answer)
+                    sendMap(data,out);
+                else{
+                    sendSet(data,out);
+                }
                 break;
         }
 
@@ -66,11 +88,95 @@ public class Frame {
                     data = User.receive(in);
                 break;
             case 2:
-
+                if(!answer)
+                    data = PutOne.receive(in);
+                break;
+            case 3:
+                if(answer){
+                    int len = in.readInt();
+                    byte[] value = new byte[len];
+                    in.readFully(value);
+                    data = value;
+                }
+                else
+                    data = in.readUTF();
+                break;
+            case 4:
+                if(!answer)
+                    data = receiveMap(in);
+                break;
+            case 5:
+                if(answer)
+                    data = receiveMap(in);
+                else
+                    data = receiveSet(in);
+                break;
         }
 
         return new Frame(type,answer,data);
 
     }
+
+
+    public static void sendMap(Object data,DataOutputStream out) throws IOException {
+        Map<String, byte[]> map = (Map<String, byte[]>) data;
+
+        out.writeInt(map.size());
+
+        for (Map.Entry<String, byte[]> entry : map.entrySet()) {
+            out.writeUTF(entry.getKey());
+
+            byte[] value = entry.getValue();
+            out.writeInt(value.length);
+            out.write(value);
+        }
+
+        out.flush();
+    }
+
+    public static Map<String, byte[]> receiveMap(DataInputStream in) throws IOException {
+        Map<String, byte[]> map = new HashMap<>();
+
+        int size = in.readInt();
+
+        for (int i = 0; i < size; i++) {
+
+            String key = in.readUTF();
+
+            int len = in.readInt();
+            byte[] value = new byte[len];
+            in.readFully(value);
+
+            map.put(key, value);
+        }
+
+        return map;
+
+    }
+
+    public static void sendSet(Object data, DataOutputStream out) throws IOException {
+        Set<String> set = (Set<String>) data;
+
+        out.writeInt(set.size());
+
+        for (String s : set ) {
+            out.writeUTF(s);
+        }
+        out.flush();
+
+    }
+
+    public static Set<String> receiveSet(DataInputStream in) throws IOException {
+        Set<String> set = new HashSet<>();
+
+        int size = in.readInt();
+
+        for(int i=0;i<size;i++){
+            set.add(in.readUTF());
+        }
+
+        return set;
+    }
+
 
 }

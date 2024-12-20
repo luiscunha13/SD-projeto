@@ -65,73 +65,32 @@ class ClientHandler implements Runnable {
 
                         break;
                     }
-                    case 2: { //get
+                    case 2: { //put
+                        PutOne p = (PutOne) f.getData();
+                        String key = p.getKey();
+                        byte[] value = p.getValue();
+                        users_database.put(key, value);
+
+                        break;
+                    }
+                    case 3: { //get
                         String key = (String) f.getData();
-
                         byte[] data = users_database.get(key);
-
-                        ls.lock();
-                        try {
-                            out.writeInt(2);
-                            out.writeInt(data.length);
-                            out.write(data);
-                            out.flush();
-                        } finally {
-                            lr.unlock();
-                        }
+                        con.send(new Frame(3,true,data));
 
                         break;
                     }
-                    case 3: { //put
-                        String key;
-                        int len;
-                        byte[] data;
+                    case 4: { //multiput
+                        Map<String,byte[]> map = (Map<String, byte[]>) f.getData();
+                        users_database.multiPut(map);
 
-                        try {
-                            key = in.readUTF();
-                            len
-                                    data = in.readFully();
-                        } finally {
-                            lr.unlock();
-                        }
-                        String key = in.readUTF();
-                        byte[] data = in.readFully();
-                        users_database.put(key, data);
-
-                        out.writeInt(3);
-                        out.flush();
                         break;
                     }
-                    case 4: { //multiread
-                        int size = in.readInt();
-                        Set<String> s = new HashSet<>();
-                        for (int i = 0; i < size; i++)
-                            s.add(in.readUTF());
+                    case 5: { //multiget
+                        Set<String> set = (Set<String>) f.getData();
+                        Map<String,byte[]> map = users_database.multiGet(set);
+                        con.send(new Frame(5,true,map));
 
-                        Map<String, byte[]> m = users_database.multiGet(s);
-
-                        out.writeUTF("readmulti");
-                        out.writeInt(m.size());
-                        for (Map.Entry<String, byte[]> e : m.entrySet()) {
-                            out.writeUTF(e.getKey());
-                            out.write(e.getValue());
-                        }
-                        out.flush();
-                        break;
-                    }
-                    case 5: { //multiwrite
-                        int size = in.readInt();
-                        Map<String, byte[]> m = new HashMap<>();
-                        for (int i = 0; i < size; i++) {
-                            String key = in.readUTF();
-                            byte[] data = in.readAllBytes();
-                            m.put(key, data);
-                        }
-
-                        users_database.multiPut(m);
-
-                        out.writeUTF("storemulti");
-                        out.flush();
                         break;
                     }
                     case 6: { //close
@@ -144,11 +103,7 @@ class ClientHandler implements Runnable {
             }
         }
 
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
         server.clientDisconnected();
     }
 }

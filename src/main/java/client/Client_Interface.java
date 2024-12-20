@@ -151,8 +151,8 @@ public class Client_Interface {
         for (Map.Entry<String,byte[]> e: m.entrySet()){
             if(e.getValue()==null)
                 System.out.println("The key " + e.getKey() + " does not exist");
-           // else
-          //      System.out.println("Key: " + e.getKey() + "   Data: " + e.getValue()); //igual ao de cima
+            else
+                System.out.println("Key: " + e.getKey() + "   Data: " + e.getValue());
         }
 
         pressAnyKey();

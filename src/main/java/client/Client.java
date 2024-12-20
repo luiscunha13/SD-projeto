@@ -1,6 +1,7 @@
 package client;
 
 import Connection.Frame;
+import Connection.PutOne;
 import Connection.User;
 
 import java.io.DataInputStream;
@@ -52,81 +53,43 @@ public class Client {
         }
     }
 
+    public void put(String key, byte[] value) throws IOException {
+        PutOne p = new PutOne(key, value);
+        Frame f = new Frame(2,false,p);
+        f.send(out);
+    }
+
     public byte[] get(String key) throws IOException {
-        ls.lock();
+        Frame f = new Frame(3,false,key);
+        f.send(out);
+
         try{
-            out.writeInt(2);
-            out.writeUTF(key);
-            out.flush();
-        }finally {
-            ls.unlock();
-        }
+            Frame res = Frame.receive(in);
 
-        lr.lock();
-        try{
-            int answer = in.readInt();
-            while(answer!=2){
-                answer = in.readInt();
-            }
-
-            int len = in.readInt();
-            byte[] data = new byte[len];
-            in.readFully(data);
-
-            return data;
-        }finally {
-            lr.unlock();
+            return (byte[])res.getData();
+        }catch(Exception e){
+            return null;
         }
     }
 
-    public void put(String key, byte[] value) throws IOException {
-        out.writeInt(3);
-        out.writeUTF(key);
-        out.write(value);
-        out.flush();
+    public void multiPut(Map<String,byte[]> pairs) throws IOException{
+        Frame f = new Frame(4,false,pairs);
+        f.send(out);
 
-        int answer = in.readInt();
-        while(answer!=3){
-            answer = in.readInt();
-        }
 
     }
 
     public Map<String, byte[]> multiGet(Set<String> keys) throws IOException{
-        out.writeInt(4);
-        out.writeInt(keys.size());
-        for (String s: keys)
-            out.writeUTF(s);
+        Frame f = new Frame(5,false,keys);
+        f.send(out);
 
-        int answer = in.readInt();
-        while(answer!=4){
-            answer = in.readInt();
+        try{
+            Frame res = Frame.receive(in);
+
+            return (Map<String, byte[]>) res.getData();
+        }catch(Exception e){
+            return null;
         }
-
-        int size = in.readInt();
-        Map<String,byte[]> m = new HashMap<>();
-        for(int i=0;i<size;i++){
-            String key = in.readUTF();
-            byte[] data = in.readAllBytes();
-            m.put(key,data);
-        }
-
-        return m;
-    }
-
-    public void multiPut(Map<String,byte[]> pairs) throws IOException{
-        out.writeInt(6);
-        out.writeInt(pairs.size());
-        for (Map.Entry<String,byte[]> e: pairs.entrySet()){
-            out.writeUTF(e.getKey());
-        //    out.writeUTF(e.getValue());
-        }
-
-        int answer = in.readInt();
-        while(answer!=6){
-            answer = in.readInt();
-        }
-
     }
 
 
@@ -138,11 +101,9 @@ public class Client {
 
             Client_Interface ci = new Client_Interface();
 
-
         }catch(Exception e){
             e.printStackTrace();
         }
-
     }
 
 
