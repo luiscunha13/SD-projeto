@@ -33,7 +33,7 @@ public class Frame {
     }
 
     public void send(DataOutputStream out) throws IOException {
-        out.writeInt(type.toByte());
+        out.writeByte(type.toByte());
         out.writeBoolean(answer);
         switch(type){
             case Login: // o login e o registo mandam a mesma cena (username e password) e recebem na mesma um boolean
