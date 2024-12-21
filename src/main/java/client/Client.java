@@ -1,8 +1,6 @@
 package client;
 
-import Connection.Frame;
-import Connection.PutOne;
-import Connection.User;
+import Connection.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -27,7 +25,7 @@ public class Client {
 
     public boolean login(String username, String password) throws IOException {
         User u = new User(username,password);
-        Frame f = new Frame(0,false,u);
+        Frame f = new Frame(FrameType.Login,false,u);
         f.send(out);
 
         try{
@@ -41,7 +39,7 @@ public class Client {
 
     public boolean register(String username, String password) throws IOException {
         User u = new User(username,password);
-        Frame f = new Frame(1,false,u);
+        Frame f = new Frame(FrameType.Register,false,u);
         f.send(out);
 
         try{
@@ -55,12 +53,12 @@ public class Client {
 
     public void put(String key, byte[] value) throws IOException {
         PutOne p = new PutOne(key, value);
-        Frame f = new Frame(2,false,p);
+        Frame f = new Frame(FrameType.Put,false,p);
         f.send(out);
     }
 
     public byte[] get(String key) throws IOException {
-        Frame f = new Frame(3,false,key);
+        Frame f = new Frame(FrameType.Get,false,key);
         f.send(out);
 
         try{
@@ -73,14 +71,14 @@ public class Client {
     }
 
     public void multiPut(Map<String,byte[]> pairs) throws IOException{
-        Frame f = new Frame(4,false,pairs);
+        Frame f = new Frame(FrameType.MultiPut,false,pairs);
         f.send(out);
 
 
     }
 
     public Map<String, byte[]> multiGet(Set<String> keys) throws IOException{
-        Frame f = new Frame(5,false,keys);
+        Frame f = new Frame(FrameType.MultiGet,false,keys);
         f.send(out);
 
         try{

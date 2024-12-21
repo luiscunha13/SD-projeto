@@ -10,17 +10,17 @@ import java.util.Set;
 
 public class Frame {
 
-    private int type; // 0-login 1-register 2-get 3-put 4-multiget 5-multiput
+    private FrameType type; // 0-login 1-register 2-get 3-put 4-multiget 5-multiput
     private boolean answer; //false-cliente->server  true-server->client
     private Object data;
 
-    public Frame(int type, boolean answer, Object data){
+    public Frame(FrameType type, boolean answer, Object data){
         this.type=type;
         this.answer=answer;
         this.data=data;
     }
 
-    public int getType() {
+    public FrameType getType() {
         return type;
     }
 
@@ -33,11 +33,11 @@ public class Frame {
     }
 
     public void send(DataOutputStream out) throws IOException {
-        out.writeInt(type);
+        out.writeInt(type.toByte());
         out.writeBoolean(answer);
         switch(type){
-            case 0: // o login e o registo mandam a mesma cena (username e password) e recebem na mesma um boolean
-            case 1:
+            case Login: // o login e o registo mandam a mesma cena (username e password) e recebem na mesma um boolean
+            case Register:
                 if(answer){
                     out.writeBoolean((boolean) data);
                     out.flush();
@@ -45,11 +45,11 @@ public class Frame {
                 else
                     User.send((User) data, out);
                 break;
-            case 2:
+            case Get:
                 if(!answer)
                     PutOne.send((PutOne) data, out);
                 break;
-            case 3:
+            case Put:
                 if(answer){
                     byte[] value = (byte[]) data;
                     out.writeInt(value.length);
@@ -60,11 +60,11 @@ public class Frame {
 
                 out.flush();
                 break;
-            case 4:
+            case MultiGet:
                 if(answer)
                     sendMap(data,out);
                 break;
-            case 5:
+            case MultiPut:
                 if(answer)
                     sendMap(data,out);
                 else{
@@ -76,22 +76,22 @@ public class Frame {
     }
 
     public static Frame receive(DataInputStream in) throws IOException{
-        int type = in.readInt();
+        FrameType type = FrameType.fromByte(in.readByte());
         boolean answer = in.readBoolean();
         Object data = null;
         switch(type){
-            case 0:
-            case 1:
+            case Login:
+            case Register:
                 if(answer)
                     data = in.readBoolean();
                 else
                     data = User.receive(in);
                 break;
-            case 2:
+            case Get:
                 if(!answer)
                     data = PutOne.receive(in);
                 break;
-            case 3:
+            case Put:
                 if(answer){
                     int len = in.readInt();
                     byte[] value = new byte[len];
@@ -101,11 +101,11 @@ public class Frame {
                 else
                     data = in.readUTF();
                 break;
-            case 4:
+            case MultiGet:
                 if(!answer)
                     data = receiveMap(in);
                 break;
-            case 5:
+            case MultiPut:
                 if(answer)
                     data = receiveMap(in);
                 else

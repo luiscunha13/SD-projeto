@@ -1,7 +1,6 @@
 package server;
 
 import Connection.*;
-import Connection.User;
 import database.Users;
 import database.Users_Database;
 
@@ -43,17 +42,17 @@ class ClientHandler implements Runnable {
             try {
                 Frame f = con.receive();
                 switch (f.getType()) {
-                    case 0: { //login
+                    case FrameType.Login: { //login
                         User u = (User) f.getData();
 
                         if (users.login(u.getUsername(), u.getPassword()))
                             login = true;
 
-                        con.send(new Frame(0,true,login));
+                        con.send(new Frame(FrameType.Login,true,login));
 
                         break;
                     }
-                    case 1: { //register
+                    case FrameType.Register: { //register
                         User u = (User) f.getData();
                         String username;
                         String password;
@@ -61,11 +60,11 @@ class ClientHandler implements Runnable {
                         if (users.register(u.getUsername(), u.getPassword()))
                             login = true;
 
-                        con.send(new Frame(1,true,login));
+                        con.send(new Frame(FrameType.Register,true,login));
 
                         break;
                     }
-                    case 2: { //put
+                    case FrameType.Put: { //put
                         PutOne p = (PutOne) f.getData();
                         String key = p.getKey();
                         byte[] value = p.getValue();
@@ -73,27 +72,27 @@ class ClientHandler implements Runnable {
 
                         break;
                     }
-                    case 3: { //get
+                    case FrameType.Get: { //get
                         String key = (String) f.getData();
                         byte[] data = users_database.get(key);
-                        con.send(new Frame(3,true,data));
+                        con.send(new Frame(FrameType.Get,true,data));
 
                         break;
                     }
-                    case 4: { //multiput
+                    case FrameType.MultiPut: { //multiput
                         Map<String,byte[]> map = (Map<String, byte[]>) f.getData();
                         users_database.multiPut(map);
 
                         break;
                     }
-                    case 5: { //multiget
+                    case FrameType.MultiGet: { //multiget
                         Set<String> set = (Set<String>) f.getData();
                         Map<String,byte[]> map = users_database.multiGet(set);
-                        con.send(new Frame(5,true,map));
+                        con.send(new Frame(FrameType.MultiGet,true,map));
 
                         break;
                     }
-                    case 6: { //close
+                    case FrameType.Close: { //close
                         exit = 1;
                         break;
                     }
