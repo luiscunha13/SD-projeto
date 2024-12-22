@@ -11,10 +11,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Client {
-
+    private static Socket socket = null;
     private static final String HOST = "localhost";
     private static final int PORT = 6666;
-
     private static DataOutputStream out;
     private static DataInputStream in;
     Lock ls = new ReentrantLock();
@@ -90,10 +89,16 @@ public class Client {
         }
     }
 
+    public void exit() throws IOException {
+        Frame f = new Frame(FrameType.Close,false,null);
+        f.send(out);
+        socket.close();
+    }
 
-    public static void main(String[] args){
+
+    public static void main(String[] args) throws IOException {
         try{
-            Socket socket = new Socket(HOST,PORT);
+            socket = new Socket(HOST,PORT);
             out = new DataOutputStream(socket.getOutputStream());
             in = new DataInputStream(socket.getInputStream());
 

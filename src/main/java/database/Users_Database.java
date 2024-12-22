@@ -8,53 +8,55 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Users_Database {
     private Map<String, byte[]> users_database = new HashMap<>(); // key-data
-    Lock l = new ReentrantLock();
+    Lock rl = new ReentrantLock();
+    Lock wl = new ReentrantLock();
 
     public void put(String key, byte[] value) {
-        l.lock();
+        wl.lock();
 
         try {
             users_database.put(key, value);
         } finally {
-            l.unlock();
+            wl.unlock();
         }
     }
 
     public byte[] get(String key) {
         byte[] answer = null;
-        l.lock();
+        rl.lock();
 
         try {
             if (users_database.containsKey(key))
                 answer = users_database.get(key);
         } finally {
-            l.unlock();
+            rl.unlock();
         }
 
         return answer;
     }
 
     public void multiPut(Map<String, byte[]> pairs) {
-        l.lock();
+        wl.lock();
 
         try {
             users_database.putAll(pairs);
         } finally {
-            l.unlock();
+            wl.unlock();
         }
     }
 
     public Map<String, byte[]> multiGet(Set<String> keys) {
         Map<String, byte[]> m = new HashMap<>();
-
+        String no = "null";
+        rl.lock();
         try {
             for (String s : keys)
                 if (users_database.containsKey(s))
                     m.put(s, users_database.get(s));
                 else
-                    m.put(s, null);
+                    m.put(s, no.getBytes());
         } finally {
-            l.unlock();
+            rl.unlock();
         }
 
         return m;

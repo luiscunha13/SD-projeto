@@ -45,11 +45,11 @@ public class Frame {
                 else
                     User.send((User) data, out);
                 break;
-            case Get:
+            case Put:
                 if(!answer)
                     PutOne.send((PutOne) data, out);
                 break;
-            case Put:
+            case Get:
                 if(answer){
                     byte[] value = (byte[]) data;
                     out.writeInt(value.length);
@@ -60,11 +60,11 @@ public class Frame {
 
                 out.flush();
                 break;
-            case MultiGet:
-                if(answer)
+            case MultiPut:
+                if(!answer)
                     sendMap(data,out);
                 break;
-            case MultiPut:
+            case MultiGet:
                 if(answer)
                     sendMap(data,out);
                 else{
@@ -87,11 +87,11 @@ public class Frame {
                 else
                     data = User.receive(in);
                 break;
-            case Get:
+            case Put:
                 if(!answer)
                     data = PutOne.receive(in);
                 break;
-            case Put:
+            case Get:
                 if(answer){
                     int len = in.readInt();
                     byte[] value = new byte[len];
@@ -101,11 +101,11 @@ public class Frame {
                 else
                     data = in.readUTF();
                 break;
-            case MultiGet:
+            case MultiPut:
                 if(!answer)
                     data = receiveMap(in);
                 break;
-            case MultiPut:
+            case MultiGet:
                 if(answer)
                     data = receiveMap(in);
                 else

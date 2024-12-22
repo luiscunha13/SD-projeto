@@ -17,14 +17,14 @@ public class Client_Interface {
     public Client_Interface() throws IOException {
         clearTerminal();
         this.menu = new Menu(new String[]{
-                "\nAUTHENTICATION OPTIONS\n",
+                "AUTHENTICATION OPTIONS\n",
                 "Login",
                 "Register",
                 "Exit"
         });
         menu.setHandler(1, this::login);
-        menu.setHandler(2,this::register);
-        menu.setHandler(3, () -> System.exit(0));
+        menu.setHandler(2, this::register);
+        menu.setHandler(3, this::exit);
 
         menu.execute();
     }
@@ -41,6 +41,7 @@ public class Client_Interface {
 
         if(!client.login(username,password)){
             System.out.println("Invalid login");
+            pressAnyKey();
             new Client_Interface();
         }
 
@@ -51,24 +52,29 @@ public class Client_Interface {
         clearTerminal();
         System.out.println("REGISTER \n");
 
-        System.out.println("Username: ");
+        System.out.print("Username: ");
         String username = sc.nextLine();
 
-        System.out.println("Password: ");
+        System.out.print("Password: ");
         String password = sc.nextLine();
 
-        System.out.println("Repeat password: ");
+        System.out.print("Repeat password: ");
         String repassword = sc.nextLine();
 
         if(! password.equals(repassword)){
-            System.out.println("Password not matching");
+            System.out.println("\nPassword not matching");
+            pressAnyKey();
             new Client_Interface();
         }
 
         if(!client.register(username,password)){
-            System.out.println("Username already exists");
+            System.out.println("\nUsername already exists");
+            pressAnyKey();
             new Client_Interface();
         }
+
+        System.out.println("\nRegistered successfully");
+        pressAnyKey();
 
         this.clientMenu();
     }
@@ -76,7 +82,7 @@ public class Client_Interface {
     public void clientMenu() throws IOException {
         clearTerminal();
         this.menu = new Menu(new String[]{
-                "\nCLIENT MENU\n",
+                "CLIENT MENU\n",
                 "Read data",
                 "Store data",
                 "Read multi data",
@@ -84,10 +90,10 @@ public class Client_Interface {
                 "Exit"
         });
         menu.setHandler(1, this::readData);
-        menu.setHandler(2,this::storeData);
+        menu.setHandler(2, this::storeData);
         menu.setHandler(3, this::readMultiData);
-        menu.setHandler(4,this::storeMultiData);
-        menu.setHandler(5, () -> System.exit(0));
+        menu.setHandler(4, this::storeMultiData);
+        menu.setHandler(5, this::exit);
 
         menu.execute();
     }
@@ -96,15 +102,17 @@ public class Client_Interface {
         clearTerminal();
         System.out.println("READ DATA \n");
 
-        System.out.println("Key: ");
+        System.out.print("Key: ");
         String key = sc.nextLine();
 
         byte[] data = client.get(key);
 
         if(data==null)
-            System.out.println("The key " + key + " does not exist");
-        //else
-            //System.out.println("Data: "+ data);   ver uma forma de fazer parse aos dados que chegam
+            System.out.println("\nThe key " + key + " does not exist");
+        else{
+            String dataS = new String(data);
+            System.out.println("\nData: "+ dataS);
+        }
 
         pressAnyKey();
         clientMenu();
@@ -114,15 +122,15 @@ public class Client_Interface {
         clearTerminal();
         System.out.println("STORE DATA \n");
 
-        System.out.println("Key: ");
+        System.out.print("Key: ");
         String key = sc.nextLine();
 
-        System.out.println("Data: ");
+        System.out.print("Data: ");
         String dataString = sc.nextLine();
 
-        client.put(key, dataString.getBytes()); //verificar se essa função é a adequada
+        client.put(key, dataString.getBytes());
 
-        System.out.println("Values stored successfully");
+        System.out.println("\nValues stored successfully");
 
         pressAnyKey();
         clientMenu();
@@ -135,9 +143,10 @@ public class Client_Interface {
 
         Set<String> set = new HashSet<>();
         String input;
+        System.out.println("Enter key or write exit to stop:");
 
         while(true){
-            System.out.println("Enter key or write exit to stop:");
+            System.out.print("Key: ");
             input = sc.nextLine();
             if(input.equals("exit"))
                 break;
@@ -147,12 +156,15 @@ public class Client_Interface {
         }
 
         Map<String, byte[]> m = client.multiGet(set);
+        String aux;
+        System.out.println();
 
         for (Map.Entry<String,byte[]> e: m.entrySet()){
-            if(e.getValue()==null)
+            aux = new String(e.getValue());
+            if(aux.equals("null"))
                 System.out.println("The key " + e.getKey() + " does not exist");
             else
-                System.out.println("Key: " + e.getKey() + "   Data: " + e.getValue());
+                System.out.println("Key: " + e.getKey() + "   Data: " + aux);
         }
 
         pressAnyKey();
@@ -165,25 +177,31 @@ public class Client_Interface {
 
         Map<String, byte[]> pairs = new HashMap<>();
         String key, dataString;
+        System.out.println("Enter key or write exit to stop:");
 
         while(true){
-            System.out.println("Enter key or write exit to stop:");
+            System.out.print("Key: ");
             key = sc.nextLine();
             if(key.equals("exit"))
                 break;
             else{
-                System.out.println("Enter data:");
+                System.out.print("Data: ");
                 dataString = sc.nextLine();
-                pairs.put(key, dataString.getBytes()); //igual ao de cima
+                pairs.put(key, dataString.getBytes());
             }
         }
 
         client.multiPut(pairs);
 
-        System.out.println("Values stored successfully");
+        System.out.println("\nValues stored successfully");
 
         pressAnyKey();
         clientMenu();
+    }
+
+    public void exit() throws IOException {
+        client.exit();
+        System.exit(0);
     }
 
     public void clearTerminal(){
@@ -192,7 +210,7 @@ public class Client_Interface {
     }
 
     public void pressAnyKey(){
-        System.out.println("Press any key to continue");
+        System.out.println("\nPress any key to continue");
         String x = sc.nextLine();
     }
 
