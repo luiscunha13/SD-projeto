@@ -18,8 +18,6 @@ class ClientHandler implements Runnable {
 
     private DataOutputStream out;
     private DataInputStream in;
-    Lock ls = new ReentrantLock();
-    Lock lr = new ReentrantLock();
 
     private Server server;
 
@@ -41,6 +39,7 @@ class ClientHandler implements Runnable {
         while (exit == 0) {
             try {
                 Frame f = con.receive();
+                int id = f.getId();
                 switch (f.getType()) {
                     case FrameType.Login: { //login
                         User u = (User) f.getData();
@@ -48,19 +47,17 @@ class ClientHandler implements Runnable {
                         if (users.login(u.getUsername(), u.getPassword()))
                             login = true;
 
-                        con.send(new Frame(FrameType.Login,true,login));
+                        con.send(new Frame(id, FrameType.Login,true,login));
 
                         break;
                     }
                     case FrameType.Register: { //register
                         User u = (User) f.getData();
-                        String username;
-                        String password;
 
                         if (users.register(u.getUsername(), u.getPassword()))
                             login = true;
 
-                        con.send(new Frame(FrameType.Register,true,login));
+                        con.send(new Frame(id, FrameType.Register,true,login));
 
                         break;
                     }
@@ -75,7 +72,7 @@ class ClientHandler implements Runnable {
                     case FrameType.Get: { //get
                         String key = (String) f.getData();
                         byte[] data = users_database.get(key);
-                        con.send(new Frame(FrameType.Get,true,data));
+                        con.send(new Frame(id, FrameType.Get,true,data));
 
                         break;
                     }
@@ -88,7 +85,7 @@ class ClientHandler implements Runnable {
                     case FrameType.MultiGet: { //multiget
                         Set<String> set = (Set<String>) f.getData();
                         Map<String,byte[]> map = users_database.multiGet(set);
-                        con.send(new Frame(FrameType.MultiGet,true,map));
+                        con.send(new Frame(id, FrameType.MultiGet,true,map));
 
                         break;
                     }
@@ -102,7 +99,6 @@ class ClientHandler implements Runnable {
                 System.out.println(e);
             }
         }
-
 
         server.clientDisconnected();
     }

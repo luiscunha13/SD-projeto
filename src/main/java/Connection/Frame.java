@@ -10,22 +10,24 @@ import java.util.Set;
 
 public class Frame {
 
+    private Integer id;
     private FrameType type; // 0-login 1-register 2-get 3-put 4-multiget 5-multiput
     private boolean answer; //false-cliente->server  true-server->client
     private Object data;
 
-    public Frame(FrameType type, boolean answer, Object data){
+    public Frame(Integer id, FrameType type, boolean answer, Object data){
+        this.id = id;
         this.type=type;
         this.answer=answer;
         this.data=data;
     }
 
-    public FrameType getType() {
-        return type;
+    public Integer getId() {
+        return id;
     }
 
-    public boolean getAnswer() {
-        return answer;
+    public FrameType getType() {
+        return type;
     }
 
     public Object getData() {
@@ -76,6 +78,7 @@ public class Frame {
     }
 
     public static Frame receive(DataInputStream in) throws IOException{
+        int id = in.readByte();
         FrameType type = FrameType.fromByte(in.readByte());
         boolean answer = in.readBoolean();
         Object data = null;
@@ -113,7 +116,7 @@ public class Frame {
                 break;
         }
 
-        return new Frame(type,answer,data);
+        return new Frame(id,type,answer,data);
 
     }
 
@@ -177,6 +180,5 @@ public class Frame {
 
         return set;
     }
-
 
 }

@@ -46,7 +46,6 @@ public class Menu {
         }
     }
 
-
     private int readOption() {
         int op;
         Scanner is = new Scanner(System.in);
@@ -64,7 +63,6 @@ public class Menu {
         }
         return op;
     }
-
 
     public void setHandler(int i, Handler h) {
         this.handlers.set(i-1, h);

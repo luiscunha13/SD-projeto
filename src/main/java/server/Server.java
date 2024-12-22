@@ -35,7 +35,7 @@ public class Server {
         l.lock();
         try {
             activeSessions--;
-            sessionAvailable.signal(); //signalAll? acho que tem que ser (Luis) acho que não porque só 1 cliente é que vai conseguir entrar
+            sessionAvailable.signal();
         } finally {
             l.unlock();
         }

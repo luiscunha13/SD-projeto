@@ -6,12 +6,8 @@ import menu.Menu;
 
 public class Client_Interface {
 
-    public boolean login=false;
-    public boolean running=false;
     Scanner sc = new Scanner(System.in);
-
     Client client = new Client();
-
     Menu menu;
 
     public Client_Interface() throws IOException {
@@ -61,7 +57,7 @@ public class Client_Interface {
         System.out.print("Repeat password: ");
         String repassword = sc.nextLine();
 
-        if(! password.equals(repassword)){
+        if(!password.equals(repassword)){
             System.out.println("\nPassword not matching");
             pressAnyKey();
             new Client_Interface();

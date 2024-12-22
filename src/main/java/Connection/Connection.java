@@ -19,8 +19,6 @@ public class Connection {
         this.socket = socket;
         this.in = new DataInputStream(socket.getInputStream());
         this.out = new DataOutputStream(socket.getOutputStream());
-        this.ls = new ReentrantLock();
-        this.lr = new ReentrantLock();
     }
 
     public void send(Frame f) throws IOException{
@@ -32,11 +30,10 @@ public class Connection {
         }
     }
 
-    public Frame receive() throws IOException, ClassNotFoundException{
+    public Frame receive() throws IOException{
         lr.lock();
         try{
-            Frame f = Frame.receive(in);
-            return f;
+            return Frame.receive(in);
         }finally {
             lr.unlock();
         }

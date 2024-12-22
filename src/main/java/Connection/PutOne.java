@@ -7,7 +7,6 @@ import java.io.IOException;
 public class PutOne {
 
     public String key;
-
     public byte[] value;
 
     public PutOne(String key, byte[] value){

@@ -28,7 +28,6 @@ public class Users {
     public boolean login(String username, String password) {
         boolean out;
         l.lock();
-
         try {
             if (!users.containsKey(username)) {
                 out = false;
@@ -38,7 +37,6 @@ public class Users {
         } finally {
             l.unlock();
         }
-
         return out;
     }
 
