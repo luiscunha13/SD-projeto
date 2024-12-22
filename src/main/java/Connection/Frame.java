@@ -35,6 +35,7 @@ public class Frame {
     }
 
     public void send(DataOutputStream out) throws IOException {
+        out.writeInt(id);
         out.writeByte(type.toByte());
         out.writeBoolean(answer);
         switch(type){
@@ -78,7 +79,7 @@ public class Frame {
     }
 
     public static Frame receive(DataInputStream in) throws IOException{
-        int id = in.readByte();
+        int id = in.readInt();
         FrameType type = FrameType.fromByte(in.readByte());
         boolean answer = in.readBoolean();
         Object data = null;

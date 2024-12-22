@@ -6,7 +6,7 @@ import java.util.*;
 public class Menu {
 
     public interface Handler {
-        public void execute() throws IOException;
+        public void execute() throws IOException, InterruptedException;
     }
 
     private List<String> options;
@@ -20,7 +20,7 @@ public class Menu {
         }); // fui buscar isto ao projeto de poo mas nem sei o que significa
     }
 
-    public void execute() throws IOException {
+    public void execute() throws IOException, InterruptedException {
         int op=-1;
         while(op!=0){
             showMenu();

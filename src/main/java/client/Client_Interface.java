@@ -10,7 +10,7 @@ public class Client_Interface {
     Client client = new Client();
     Menu menu;
 
-    public Client_Interface() throws IOException {
+    public Client_Interface() throws IOException, InterruptedException {
         clearTerminal();
         this.menu = new Menu(new String[]{
                 "AUTHENTICATION OPTIONS\n",
@@ -25,7 +25,7 @@ public class Client_Interface {
         menu.execute();
     }
 
-    public void login() throws IOException {
+    public void login() throws IOException, InterruptedException {
         clearTerminal();
         System.out.println("LOG IN \n");
 
@@ -44,7 +44,7 @@ public class Client_Interface {
         this.clientMenu();
     }
 
-    public void register() throws IOException {
+    public void register() throws IOException, InterruptedException {
         clearTerminal();
         System.out.println("REGISTER \n");
 
@@ -75,7 +75,7 @@ public class Client_Interface {
         this.clientMenu();
     }
 
-    public void clientMenu() throws IOException {
+    public void clientMenu() throws IOException, InterruptedException {
         clearTerminal();
         this.menu = new Menu(new String[]{
                 "CLIENT MENU\n",
@@ -94,7 +94,7 @@ public class Client_Interface {
         menu.execute();
     }
 
-    public void readData() throws IOException {
+    public void readData() throws IOException, InterruptedException {
         clearTerminal();
         System.out.println("READ DATA \n");
 
@@ -114,7 +114,7 @@ public class Client_Interface {
         clientMenu();
     }
 
-    public void storeData() throws IOException {
+    public void storeData() throws IOException, InterruptedException {
         clearTerminal();
         System.out.println("STORE DATA \n");
 
@@ -130,10 +130,9 @@ public class Client_Interface {
 
         pressAnyKey();
         clientMenu();
-
     }
 
-    public void readMultiData() throws IOException {
+    public void readMultiData() throws IOException, InterruptedException {
         clearTerminal();
         System.out.println("READ MULTI DATA \n");
 
@@ -167,7 +166,7 @@ public class Client_Interface {
         clientMenu();
     }
 
-    public void storeMultiData() throws IOException {
+    public void storeMultiData() throws IOException, InterruptedException {
         clearTerminal();
         System.out.println("STORE MULTI DATA \n");
 
