@@ -5,12 +5,16 @@ import Connection.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 public class Client {
     private static Socket socket = null;
@@ -24,6 +28,9 @@ public class Client {
     private Condition replyCondition = ls.newCondition();
     private Lock lockId = new ReentrantLock();
     private int idRequest = 0;
+
+    ExecutorService threadPool = Executors.newFixedThreadPool(5);
+
 
     public Client() throws IOException{
 
@@ -84,17 +91,28 @@ public class Client {
         }
     }
 
-    public boolean login(String username, String password) throws IOException, InterruptedException {
-        User u = new User(username,password);
-        Frame f = new Frame(getAndIncrement(), FrameType.Login,false,u);
+    private void executeThreadPool(Frame f, DataOutputStream out){
         ls.lock();
         try{
-            f.serialize(out);
-            out.flush();
+            threadPool.execute(() -> {
+                try {
+                    f.serialize(out);
+                    out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
         }
         finally {
             ls.unlock();
         }
+    }
+
+    public boolean login(String username, String password) throws IOException, InterruptedException {
+        User u = new User(username,password);
+        Frame f = new Frame(getAndIncrement(), FrameType.Login,false,u);
+
+        executeThreadPool(f,out);
 
         return (Boolean) awaitReply(f.getId());
     }
@@ -102,15 +120,11 @@ public class Client {
     public boolean register(String username, String password) throws IOException, InterruptedException {
         User u = new User(username,password);
         Frame f = new Frame(getAndIncrement(), FrameType.Register,false,u);
-        ls.lock();
-        try {
-            System.out.println("Sending id: " + f.getId());
-            f.serialize(out);
-            out.flush();
-            System.out.println("Registration request sent successfully");
-        } finally {
-            ls.unlock();
-        }
+
+        System.out.println("Sending id: " + f.getId());
+        executeThreadPool(f,out);
+        System.out.println("Registration request sent successfully");
+
         System.out.println("Awaiting registration response...");
         boolean result = (Boolean) awaitReply(f.getId());
         System.out.println("Registration completed with result: " + result);
@@ -121,47 +135,29 @@ public class Client {
     public void put(String key, byte[] value) throws IOException {
         PutOne p = new PutOne(key, value);
         Frame f = new Frame(getAndIncrement(), FrameType.Put,false,p);
-        ls.lock();
-        try {
-            f.serialize(out);
-            out.flush();
-        } finally {
-            ls.unlock();
-        }
+
+        executeThreadPool(f,out);
     }
 
     public byte[] get(String key) throws IOException, InterruptedException {
         Frame f = new Frame(getAndIncrement(), FrameType.Get,false,key);
-        ls.lock();
-        try {
-            f.serialize(out);
-            out.flush();
-        } finally {
-            ls.unlock();
-        }
+
+        executeThreadPool(f,out);
+
         return (byte[]) awaitReply(f.getId());
     }
 
     public void multiPut(Map<String,byte[]> pairs) throws IOException{
         Frame f = new Frame(getAndIncrement(), FrameType.MultiPut,false,pairs);
-        ls.lock();
-        try {
-            f.serialize(out);
-            out.flush();
-        } finally {
-            ls.unlock();
-        }
+
+        executeThreadPool(f,out);
     }
 
     public Map<String, byte[]> multiGet(Set<String> keys) throws IOException, InterruptedException{
         Frame f = new Frame(getAndIncrement(), FrameType.MultiGet,false,keys);
-        ls.lock();
-        try {
-            f.serialize(out);
-            out.flush();
-        } finally {
-            ls.unlock();
-        }
+
+        executeThreadPool(f,out);
+
         return (Map<String, byte[]>) awaitReply(f.getId());
     }
 
@@ -173,13 +169,10 @@ public class Client {
 
     public void exit() throws IOException {
         Frame f = new Frame(getAndIncrement(), FrameType.Close,false,null);
-        ls.lock();
-        try {
-            f.serialize(out);
-            out.flush();
-        } finally {
-            ls.unlock();
-        }
+
+        executeThreadPool(f,out);
+        
+        threadPool.shutdown();
         socket.close();
     }
 
