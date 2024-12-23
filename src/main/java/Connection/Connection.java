@@ -24,7 +24,8 @@ public class Connection {
     public void send(Frame f) throws IOException{
         ls.lock();
         try{
-            f.send(out);
+            f.serialize(out);
+            out.flush();
         }finally{
             ls.unlock();
         }
@@ -33,7 +34,7 @@ public class Connection {
     public Frame receive() throws IOException{
         lr.lock();
         try{
-            return Frame.receive(in);
+            return Frame.deserialize(in);
         }finally {
             lr.unlock();
         }

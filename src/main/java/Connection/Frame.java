@@ -34,17 +34,15 @@ public class Frame {
         return data;
     }
 
-    public void send(DataOutputStream out) throws IOException {
+    public void serialize(DataOutputStream out) throws IOException {
         out.writeInt(id);
         out.writeByte(type.toByte());
         out.writeBoolean(answer);
         switch(type){
             case Login: // o login e o registo mandam a mesma cena (username e password) e recebem na mesma um boolean
             case Register:
-                if(answer){
+                if(answer)
                     out.writeBoolean((boolean) data);
-                    out.flush();
-                }
                 else
                     User.send((User) data, out);
                 break;
@@ -60,25 +58,21 @@ public class Frame {
                 }
                 else
                     out.writeUTF((String) data);
-
-                out.flush();
                 break;
             case MultiPut:
                 if(!answer)
-                    sendMap(data,out);
+                    serializeMap(data,out);
                 break;
             case MultiGet:
                 if(answer)
-                    sendMap(data,out);
-                else{
-                    sendSet(data,out);
-                }
+                    serializeMap(data,out);
+                else
+                    serializeSet(data,out);
                 break;
         }
-
     }
 
-    public static Frame receive(DataInputStream in) throws IOException{
+    public static Frame deserialize(DataInputStream in) throws IOException{
         int id = in.readInt();
         FrameType type = FrameType.fromByte(in.readByte());
         boolean answer = in.readBoolean();
@@ -107,22 +101,21 @@ public class Frame {
                 break;
             case MultiPut:
                 if(!answer)
-                    data = receiveMap(in);
+                    data = deserializeMap(in);
                 break;
             case MultiGet:
                 if(answer)
-                    data = receiveMap(in);
+                    data = deserializeMap(in);
                 else
-                    data = receiveSet(in);
+                    data = deserializeSet(in);
                 break;
         }
 
         return new Frame(id,type,answer,data);
-
     }
 
 
-    public static void sendMap(Object data,DataOutputStream out) throws IOException {
+    public static void serializeMap(Object data, DataOutputStream out) throws IOException {
         Map<String, byte[]> map = (Map<String, byte[]>) data;
 
         out.writeInt(map.size());
@@ -134,11 +127,9 @@ public class Frame {
             out.writeInt(value.length);
             out.write(value);
         }
-
-        out.flush();
     }
 
-    public static Map<String, byte[]> receiveMap(DataInputStream in) throws IOException {
+    public static Map<String, byte[]> deserializeMap(DataInputStream in) throws IOException {
         Map<String, byte[]> map = new HashMap<>();
 
         int size = in.readInt();
@@ -155,10 +146,9 @@ public class Frame {
         }
 
         return map;
-
     }
 
-    public static void sendSet(Object data, DataOutputStream out) throws IOException {
+    public static void serializeSet(Object data, DataOutputStream out) throws IOException {
         Set<String> set = (Set<String>) data;
 
         out.writeInt(set.size());
@@ -166,11 +156,9 @@ public class Frame {
         for (String s : set ) {
             out.writeUTF(s);
         }
-        out.flush();
-
     }
 
-    public static Set<String> receiveSet(DataInputStream in) throws IOException {
+    public static Set<String> deserializeSet(DataInputStream in) throws IOException {
         Set<String> set = new HashSet<>();
 
         int size = in.readInt();

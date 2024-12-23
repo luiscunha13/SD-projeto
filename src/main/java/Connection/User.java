@@ -26,7 +26,6 @@ public class User {
     public static void send(User u, DataOutputStream out) throws IOException {
         out.writeUTF(u.username);
         out.writeUTF(u.password);
-        out.flush();
     }
 
     public static User receive(DataInputStream in) throws IOException{

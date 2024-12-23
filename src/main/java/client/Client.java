@@ -43,10 +43,10 @@ public class Client {
         System.out.println("### Run method started ###");
         try {
             while (true) {
-                System.out.println("[Thread " + Thread.currentThread().getId() + "] Waiting to receive frame...");
+                System.out.println("[Thread " + Thread.currentThread().getId() + "] Waiting to deserialize frame...");
                 lr.lock();
                 try {
-                    Frame res = Frame.receive(in);
+                    Frame res = Frame.deserialize(in);
                     System.out.println("[Thread " + Thread.currentThread().getId() +
                             "] Received frame: " + res.getId() +
                             " Type: " + res.getType() +
@@ -80,7 +80,7 @@ public class Client {
             System.out.println("Received reply for request ID: " + requestId);
             return replies.get(requestId);
         } finally {
-        ls.unlock();
+            ls.unlock();
         }
     }
 
@@ -89,7 +89,8 @@ public class Client {
         Frame f = new Frame(getAndIncrement(), FrameType.Login,false,u);
         ls.lock();
         try{
-            f.send(out);
+            f.serialize(out);
+            out.flush();
         }
         finally {
             ls.unlock();
@@ -104,7 +105,8 @@ public class Client {
         ls.lock();
         try {
             System.out.println("Sending id: " + f.getId());
-            f.send(out);
+            f.serialize(out);
+            out.flush();
             System.out.println("Registration request sent successfully");
         } finally {
             ls.unlock();
@@ -121,7 +123,8 @@ public class Client {
         Frame f = new Frame(getAndIncrement(), FrameType.Put,false,p);
         ls.lock();
         try {
-            f.send(out);
+            f.serialize(out);
+            out.flush();
         } finally {
             ls.unlock();
         }
@@ -131,7 +134,8 @@ public class Client {
         Frame f = new Frame(getAndIncrement(), FrameType.Get,false,key);
         ls.lock();
         try {
-            f.send(out);
+            f.serialize(out);
+            out.flush();
         } finally {
             ls.unlock();
         }
@@ -142,7 +146,8 @@ public class Client {
         Frame f = new Frame(getAndIncrement(), FrameType.MultiPut,false,pairs);
         ls.lock();
         try {
-            f.send(out);
+            f.serialize(out);
+            out.flush();
         } finally {
             ls.unlock();
         }
@@ -152,7 +157,8 @@ public class Client {
         Frame f = new Frame(getAndIncrement(), FrameType.MultiGet,false,keys);
         ls.lock();
         try {
-            f.send(out);
+            f.serialize(out);
+            out.flush();
         } finally {
             ls.unlock();
         }
@@ -169,7 +175,8 @@ public class Client {
         Frame f = new Frame(getAndIncrement(), FrameType.Close,false,null);
         ls.lock();
         try {
-            f.send(out);
+            f.serialize(out);
+            out.flush();
         } finally {
             ls.unlock();
         }
