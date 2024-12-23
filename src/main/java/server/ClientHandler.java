@@ -13,12 +13,7 @@ class ClientHandler implements Runnable {
     private Connection con;
     private Users users;
     private Users_Database users_database;
-
-    private DataOutputStream out;
-    private DataInputStream in;
-
     private Server server;
-
     public boolean login = false; //muda para true quando iniciar sessão
     //false ->mostra as opções de registar e de login , true -> mostra o resto das opções
 

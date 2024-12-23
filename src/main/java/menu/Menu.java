@@ -6,7 +6,7 @@ import java.util.*;
 public class Menu {
 
     public interface Handler {
-        public void execute() throws IOException, InterruptedException;
+        void execute() throws IOException, InterruptedException;
     }
 
     private List<String> options;
@@ -17,7 +17,7 @@ public class Menu {
         this.handlers = new ArrayList<>();
         this.options.forEach(s-> {
             this.handlers.add(() -> System.out.println("\nATENÇÃO: Opção não implementada!"));
-        }); // fui buscar isto ao projeto de poo mas nem sei o que significa
+        });
     }
 
     public void execute() throws IOException, InterruptedException {
@@ -32,7 +32,6 @@ public class Menu {
         }
     }
 
-    /** Apresentar o menu */
     private void showMenu() {
         for (int i=0; i<this.options.size(); i++) {
             if(i==0){
