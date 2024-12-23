@@ -22,7 +22,7 @@ public class Client {
     private static DataOutputStream out;
     private static DataInputStream in;
     private Lock ls = new ReentrantLock();
-    private ConcurrentHashMap<Integer,Frame> replies = new ConcurrentHashMap<>();
+    private Map<Integer,Frame> replies = new HashMap<>();
     private Queue<Frame> repliesToPrint = new LinkedList<>();
     private Condition replyCondition = ls.newCondition();
     private Lock lockId = new ReentrantLock();

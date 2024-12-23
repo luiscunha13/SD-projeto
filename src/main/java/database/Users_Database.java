@@ -1,8 +1,6 @@
 package database;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -12,7 +10,7 @@ public class Users_Database {
     Lock rl = new ReentrantLock();
     Lock wl = new ReentrantLock();
     Condition c = rl.newCondition();
-    Set<String> keysCond;
+    private Map<String, List<byte[]>> conditions;
 
     public void put(String key, byte[] value) {
         wl.lock();
@@ -38,6 +36,20 @@ public class Users_Database {
 
     public byte[] getWhen(String key, String keyCond, byte[] valueCond){
         byte[] answer = null;
+        //colocar no map de condições
+        wl.lock();
+        try{
+            if (conditions.containsKey(keyCond)){
+                conditions.get(keyCond).add(valueCond);
+            } else {
+                List<byte[]> list = new ArrayList<>();
+                list.add(valueCond);
+                conditions.put(keyCond, list);
+            }
+        } finally {
+            wl.unlock();
+        }
+        //adormecer enquanto valor não for igual a condição
         rl.lock();
         try {
             while (get(keyCond) != valueCond) {
