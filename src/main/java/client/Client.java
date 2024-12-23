@@ -23,8 +23,8 @@ public class Client {
     private static DataOutputStream out;
     private static DataInputStream in;
     private Lock ls = new ReentrantLock();
-    private Lock lr = new ReentrantLock();
-    private ConcurrentHashMap<Integer,Object> replies = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer,Frame> replies = new ConcurrentHashMap<>();
+    private Queue<Frame> repliesToPrint = new LinkedList<>();
     private Condition replyCondition = ls.newCondition();
     private Lock lockId = new ReentrantLock();
     private int idRequest = 0;
@@ -47,32 +47,26 @@ public class Client {
     }
 
     private void run() throws IOException {
-        System.out.println("### Run method started ###");
         try {
             while (true) {
-                System.out.println("[Thread " + Thread.currentThread().getId() + "] Waiting to deserialize frame...");
-                lr.lock();
-                try {
-                    Frame res = Frame.deserialize(in);
-                    System.out.println("[Thread " + Thread.currentThread().getId() +
-                            "] Received frame: " + res.getId() +
-                            " Type: " + res.getType() +
-                            " Data: " + res.getData());
 
+                    Frame res = Frame.deserialize(in);
                     ls.lock();
                     try {
-                        replies.put(res.getId(), res.getData());
-                        System.out.println("Added response to replies map. Signaling waiting threads.");
+                        replies.put(res.getId(), res);
                         replyCondition.signalAll();
                     } finally {
                         ls.unlock();
                     }
-                } finally {
-                    lr.unlock();
-                }
+
+                    if(res.getType()==FrameType.Get || res.getType()==FrameType.MultiGet){
+                        repliesToPrint.add(res);
+                    }
+
+
+                    if(res.getId()==-1) break;
             }
         } catch (IOException e) {
-            System.out.println("### Run method error: " + e.getMessage() + " ###");
             e.printStackTrace();
         }
     }
@@ -81,11 +75,9 @@ public class Client {
         ls.lock();
         try {
             while (!replies.containsKey(requestId)) {
-                System.out.println("Waiting for reply to request ID: " + requestId);
                 replyCondition.await();
             }
-            System.out.println("Received reply for request ID: " + requestId);
-            return replies.get(requestId);
+            return replies.get(requestId).getData();
         } finally {
             ls.unlock();
         }
@@ -108,6 +100,15 @@ public class Client {
         }
     }
 
+    public List<Frame> getRepliesToPrint(){
+        List<Frame> rep = new ArrayList<>();
+
+        while(!repliesToPrint.isEmpty())
+            rep.add(repliesToPrint.poll());
+
+        return rep;
+    }
+
     public boolean login(String username, String password) throws IOException, InterruptedException {
         User u = new User(username,password);
         Frame f = new Frame(getAndIncrement(), FrameType.Login,false,u);
@@ -121,15 +122,9 @@ public class Client {
         User u = new User(username,password);
         Frame f = new Frame(getAndIncrement(), FrameType.Register,false,u);
 
-        System.out.println("Sending id: " + f.getId());
         executeThreadPool(f,out);
-        System.out.println("Registration request sent successfully");
 
-        System.out.println("Awaiting registration response...");
-        boolean result = (Boolean) awaitReply(f.getId());
-        System.out.println("Registration completed with result: " + result);
-
-        return result;
+        return (boolean) (Boolean) awaitReply(f.getId());
     }
 
     public void put(String key, byte[] value) throws IOException {
@@ -139,12 +134,13 @@ public class Client {
         executeThreadPool(f,out);
     }
 
-    public byte[] get(String key) throws IOException, InterruptedException {
-        Frame f = new Frame(getAndIncrement(), FrameType.Get,false,key);
+    public int get(String key) throws IOException, InterruptedException {
+        int i = getAndIncrement();
+        Frame f = new Frame(i, FrameType.Get,false,key);
 
         executeThreadPool(f,out);
 
-        return (byte[]) awaitReply(f.getId());
+        return i;
     }
 
     public void multiPut(Map<String,byte[]> pairs) throws IOException{
@@ -153,12 +149,13 @@ public class Client {
         executeThreadPool(f,out);
     }
 
-    public Map<String, byte[]> multiGet(Set<String> keys) throws IOException, InterruptedException{
-        Frame f = new Frame(getAndIncrement(), FrameType.MultiGet,false,keys);
+    public int multiGet(Set<String> keys) throws IOException, InterruptedException{
+        int i = getAndIncrement();
+        Frame f = new Frame(i, FrameType.MultiGet,false,keys);
 
         executeThreadPool(f,out);
 
-        return (Map<String, byte[]>) awaitReply(f.getId());
+        return i;
     }
 
     /*
@@ -167,11 +164,12 @@ public class Client {
     }
     */
 
-    public void exit() throws IOException {
-        Frame f = new Frame(getAndIncrement(), FrameType.Close,false,null);
+    public void exit() throws IOException, InterruptedException {
+        Frame f = new Frame(-1, FrameType.Close,false,null);
 
         executeThreadPool(f,out);
-        
+        awaitReply(-1);
+
         threadPool.shutdown();
         socket.close();
     }
@@ -184,7 +182,6 @@ public class Client {
 
             Client client = new Client();
             Thread receiverThread = new Thread(() -> {
-                System.out.println("### Receiver thread starting ###");
                 try {
                     client.run();
                 } catch (IOException e) {
@@ -196,7 +193,7 @@ public class Client {
             receiverThread.setDaemon(false); // Make sure it's not a daemon thread 
             receiverThread.start();
 
-            Client_Interface ci = new Client_Interface();
+            Client_Interface ci = new Client_Interface(client);
 
         } catch(Exception e) {
             e.printStackTrace();

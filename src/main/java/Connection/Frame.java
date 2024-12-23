@@ -69,6 +69,10 @@ public class Frame {
                 else
                     serializeSet(data,out);
                 break;
+            case Close:
+                if(answer)
+                    out.writeUTF((String) data);
+                break;
         }
     }
 
@@ -109,6 +113,9 @@ public class Frame {
                 else
                     data = deserializeSet(in);
                 break;
+            case Close:
+                if(answer)
+                    data = in.readUTF();
         }
 
         return new Frame(id,type,answer,data);

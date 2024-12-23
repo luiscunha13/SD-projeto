@@ -2,15 +2,23 @@ package client;
 
 import java.io.IOException;
 import java.util.*;
+
+import Connection.Frame;
+import Connection.FrameType;
 import menu.Menu;
 
 public class Client_Interface {
 
     Scanner sc = new Scanner(System.in);
-    Client client = new Client();
+    Client client;
     Menu menu;
 
-    public Client_Interface() throws IOException, InterruptedException {
+    public Client_Interface(Client c) throws IOException, InterruptedException {
+        this.client = c;
+        authenticationMenu();
+    }
+
+    public void authenticationMenu() throws IOException, InterruptedException {
         clearTerminal();
         this.menu = new Menu(new String[]{
                 "AUTHENTICATION OPTIONS\n",
@@ -38,7 +46,7 @@ public class Client_Interface {
         if(!client.login(username,password)){
             System.out.println("Invalid login");
             pressAnyKey();
-            new Client_Interface();
+            authenticationMenu();
         }
 
         this.clientMenu();
@@ -60,13 +68,13 @@ public class Client_Interface {
         if(!password.equals(repassword)){
             System.out.println("\nPassword not matching");
             pressAnyKey();
-            new Client_Interface();
+            authenticationMenu();
         }
 
         if(!client.register(username,password)){
             System.out.println("\nUsername already exists");
             pressAnyKey();
-            new Client_Interface();
+            authenticationMenu();
         }
 
         System.out.println("\nRegistered successfully");
@@ -83,13 +91,15 @@ public class Client_Interface {
                 "Store data",
                 "Read multi data",
                 "Store multi data",
+                "Read replies",
                 "Exit"
         });
         menu.setHandler(1, this::readData);
         menu.setHandler(2, this::storeData);
         menu.setHandler(3, this::readMultiData);
         menu.setHandler(4, this::storeMultiData);
-        menu.setHandler(5, this::exit);
+        menu.setHandler(5, this::readReplies);
+        menu.setHandler(6, this::exit);
 
         menu.execute();
     }
@@ -101,14 +111,10 @@ public class Client_Interface {
         System.out.print("Key: ");
         String key = sc.nextLine();
 
-        byte[] data = client.get(key);
+        int id = client.get(key);
 
-        if(data==null)
-            System.out.println("\nThe key " + key + " does not exist");
-        else{
-            String dataS = new String(data);
-            System.out.println("\nData: "+ dataS);
-        }
+        System.out.println("\nRequest id: ["+id +"]");
+
 
         pressAnyKey();
         clientMenu();
@@ -150,17 +156,9 @@ public class Client_Interface {
             }
         }
 
-        Map<String, byte[]> m = client.multiGet(set);
-        String aux;
-        System.out.println();
+        int id = client.multiGet(set);
 
-        for (Map.Entry<String,byte[]> e: m.entrySet()){
-            aux = new String(e.getValue());
-            if(aux.equals("null"))
-                System.out.println("The key " + e.getKey() + " does not exist");
-            else
-                System.out.println("Key: " + e.getKey() + "   Data: " + aux);
-        }
+        System.out.println("\nRequest id: ["+id +"]");
 
         pressAnyKey();
         clientMenu();
@@ -194,7 +192,51 @@ public class Client_Interface {
         clientMenu();
     }
 
-    public void exit() throws IOException {
+    public void readReplies() throws IOException, InterruptedException {
+        List<Frame> l = client.getRepliesToPrint();
+
+        clearTerminal();
+        System.out.println("READ REPLIES \n");
+
+        for(Frame f: l)
+            printReply(f);
+
+        pressAnyKey();
+        clientMenu();
+    }
+
+    public void printReply(Frame f){
+
+        System.out.println("["+f.getId()+"]");
+
+        if(f.getType()== FrameType.Get){
+            byte[] data = (byte[]) f.getData();
+
+            if(data==null)
+                System.out.println("The key does not exist");
+            else {
+                String dataS = new String(data);
+                System.out.println("Data: " + dataS);
+            }
+        }
+        else{
+            Map<String, byte[]> m = (Map<String, byte[]>) f.getData();
+            String aux;
+            System.out.println();
+
+            for (Map.Entry<String,byte[]> e: m.entrySet()) {
+                aux = new String(e.getValue());
+                if (aux.equals("null"))
+                    System.out.println("The key does not exist");
+                else
+                    System.out.println("Key: " + e.getKey() + "   Data: " + aux);
+            }
+        }
+
+        System.out.println();
+    }
+
+    public void exit() throws IOException, InterruptedException {
         client.exit();
         System.exit(0);
     }

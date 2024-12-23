@@ -88,6 +88,7 @@ class ClientHandler implements Runnable {
                         break;
                     }
                     case FrameType.Close: { //close
+                        con.send(new Frame(id, FrameType.Close,true,""));
                         con.close();
                         exit = 1;
                         break;
