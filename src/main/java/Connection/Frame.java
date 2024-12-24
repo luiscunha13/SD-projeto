@@ -104,7 +104,10 @@ public class Frame {
                 break;
             case Get:
                 if(answer){
-
+                    int len = in.readInt();
+                    byte[] value = new byte[len];
+                    in.readFully(value);
+                    data = value;
                 }
                 else
                     data = in.readUTF();
