@@ -82,6 +82,12 @@ class ClientHandler implements Runnable {
 
                         break;
                     }
+                    case FrameType.GetWhen:{
+                        GetWhen g = (GetWhen) f.getData();
+                        byte[] b = users_database.getWhen(g.getKey(),g.getKeyCond(),g.getValueCond());
+                        con.send(new Frame(id, FrameType.GetWhen,true,b));
+                        break;
+                    }
                     case FrameType.Close: { //close
                         con.send(new Frame(id, FrameType.Close,true,""));
                         con.close();

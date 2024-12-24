@@ -7,6 +7,7 @@ public enum FrameType {
     Put,
     MultiGet,
     MultiPut,
+    GetWhen,
     Close;
 
     public byte toByte() {
@@ -21,7 +22,8 @@ public enum FrameType {
             case 3 -> Put;
             case 4 -> MultiGet;
             case 5 -> MultiPut;
-            case 6 -> Close;
+            case 6 -> GetWhen;
+            case 7 -> Close;
             default -> null;
         };
     }

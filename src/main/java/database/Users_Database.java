@@ -10,7 +10,7 @@ public class Users_Database {
     Lock rl = new ReentrantLock();
     Lock wl = new ReentrantLock();
     Condition c = rl.newCondition();
-    private Map<String, LinkedList<WaitingCondition>> waitingConditions;
+    private Map<String, LinkedList<WaitingCondition>> waitingConditions = new HashMap<>();
 
     private static class WaitingCondition {
         byte[] expectedValue;
@@ -35,9 +35,11 @@ public class Users_Database {
 
             LinkedList<WaitingCondition> conditions = waitingConditions.get(key);
             if (conditions != null) {
+                System.out.println("Lista tem elementos");
                 for (WaitingCondition wc : conditions) {
                     if (wc.match(value)) {
                         wc.condition.signal();
+                        System.out.println("dei signal");
                     }
                 }
             }
@@ -110,8 +112,8 @@ public class Users_Database {
 
         wl.lock();
         try{ // criar uma lista de conditions (se ainda não existir) para meter no map de conditions
-            LinkedList<WaitingCondition> conditions = waitingConditions.computeIfAbsent(key,l -> new LinkedList<>());
-
+            LinkedList<WaitingCondition> conditions = waitingConditions.computeIfAbsent(keyCond,l -> new LinkedList<>());
+            System.out.println("criei a linkedlist");
             for(WaitingCondition c : conditions){  // ver se já há uma condição igual
                 if(c.match(valueCond)){
                     cond = c;
@@ -122,11 +124,13 @@ public class Users_Database {
             if(cond==null){ // caso não haja nenhuma condição igual, criar uma e meter na lista
                 cond = new WaitingCondition(valueCond,wl.newCondition());
                 conditions.add(cond);
+                System.out.println("criei nova condiçao e adicionei");
             }
 
             while(!verifyCondition(keyCond,valueCond)) //await
                 cond.condition.await();
 
+            System.out.println("passou o await");
             byte[] out;
             rl.lock();
             try{
@@ -147,6 +151,7 @@ public class Users_Database {
 
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return null;
         } finally {
             wl.unlock();
         }

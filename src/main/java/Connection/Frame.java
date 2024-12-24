@@ -69,6 +69,15 @@ public class Frame {
                 else
                     serializeSet(data,out);
                 break;
+            case GetWhen:
+                if(answer){
+                    byte[] value = (byte[]) data;
+                    out.writeInt(value.length);
+                    out.write(value);
+                }
+                else
+                    GetWhen.send((GetWhen) data, out);
+                break;
             case Close:
                 if(answer)
                     out.writeUTF((String) data);
@@ -95,10 +104,7 @@ public class Frame {
                 break;
             case Get:
                 if(answer){
-                    int len = in.readInt();
-                    byte[] value = new byte[len];
-                    in.readFully(value);
-                    data = value;
+
                 }
                 else
                     data = in.readUTF();
@@ -112,6 +118,17 @@ public class Frame {
                     data = deserializeMap(in);
                 else
                     data = deserializeSet(in);
+                break;
+            case GetWhen:
+                if(answer){
+                    int len = in.readInt();
+                    byte[] value = new byte[len];
+                    in.readFully(value);
+                    data = value;
+                }
+                else
+                    data = GetWhen.receive(in);
+
                 break;
             case Close:
                 if(answer)

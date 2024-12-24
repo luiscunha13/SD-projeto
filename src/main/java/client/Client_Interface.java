@@ -91,6 +91,7 @@ public class Client_Interface {
                 "Store data",
                 "Read multi data",
                 "Store multi data",
+                "GetWhen",
                 "Read replies",
                 "Exit"
         });
@@ -98,8 +99,9 @@ public class Client_Interface {
         menu.setHandler(2, this::storeData);
         menu.setHandler(3, this::readMultiData);
         menu.setHandler(4, this::storeMultiData);
-        menu.setHandler(5, this::readReplies);
-        menu.setHandler(6, this::exit);
+        menu.setHandler(5, this::getWhen);
+        menu.setHandler(6, this::readReplies);
+        menu.setHandler(7, this::exit);
 
         menu.execute();
     }
@@ -192,6 +194,27 @@ public class Client_Interface {
         clientMenu();
     }
 
+    public void getWhen() throws IOException, InterruptedException {
+        clearTerminal();
+        System.out.println("GETWHEN \n");
+
+        System.out.print("Key: ");
+        String key = sc.nextLine();
+
+        System.out.print("KeyCond: ");
+        String keyCond = sc.nextLine();
+
+        System.out.print("ValueCond: ");
+        String valuecond = sc.nextLine();
+
+        int id = client.getWhen(key, keyCond, valuecond.getBytes());
+
+        System.out.println("\nRequest id: ["+id +"]");
+
+        pressAnyKey();
+        clientMenu();
+    }
+
     public void readReplies() throws IOException, InterruptedException {
         List<Frame> l = client.getRepliesToPrint();
 
@@ -219,7 +242,7 @@ public class Client_Interface {
                 System.out.println("Data: " + dataS);
             }
         }
-        else{
+        else if(f.getType()== FrameType.MultiGet){
             Map<String, byte[]> m = (Map<String, byte[]>) f.getData();
             String aux;
             System.out.println();
@@ -231,6 +254,11 @@ public class Client_Interface {
                 else
                     System.out.println("Key: " + e.getKey() + "   Data: " + aux);
             }
+        }
+        else {
+            byte[] data = (byte[]) f.getData();
+            String dataS = new String(data);
+            System.out.println("Data: " + dataS);
         }
 
         System.out.println();

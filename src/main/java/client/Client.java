@@ -150,9 +150,14 @@ public class Client {
         return i;
     }
 
-    public byte[] getWhen(String key, String keyCond, byte[] valueCond){
+    public int getWhen(String key, String keyCond, byte[] valueCond){
+        int i = getAndIncrement();
+        GetWhen g = new GetWhen(key, keyCond, valueCond);
+        Frame f = new Frame(i, FrameType.GetWhen,false,g);
 
+        executeThreadPool(f,out);
 
+        return i;
 
     }
 
