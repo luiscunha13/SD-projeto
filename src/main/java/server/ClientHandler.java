@@ -23,6 +23,7 @@ class ClientHandler implements Runnable {
         while (true) {
             try {
                 Frame f = con.receive();
+                System.out.println("recebi frame");
                 int id = f.getId();
                 if(f.getType()==FrameType.Close) {
                     con.send(new Frame(id, FrameType.Close,true,""));
@@ -30,6 +31,7 @@ class ClientHandler implements Runnable {
                     break;
                 }
                 server.addRequest(new Request(f, con, users, users_database));
+                System.out.println("adicionei request ch");
             } catch (Exception e) {
                 System.out.println(e);
             }

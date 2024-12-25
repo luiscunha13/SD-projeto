@@ -26,8 +26,10 @@ public class Client {
     private Condition replyCondition = ls.newCondition();
     private Lock lockId = new ReentrantLock();
     private int idRequest = 0;
-
-    ExecutorService threadPool = Executors.newFixedThreadPool(5);
+    private Thread receiverThread;
+    private final Thread[] workerThreads = new Thread[5];
+    private Queue<Frame> frameQueue = new LinkedList<>();
+    private Lock lQueue = new ReentrantLock();
 
     private int getAndIncrement() {
         lockId.lock();
@@ -39,26 +41,42 @@ public class Client {
         return idRequest;
     }
 
-    private void run() throws IOException {
-        try {
-            while (true) {
-                Frame res = Frame.deserialize(in);
-                ls.lock();
-                try {
-                    replies.put(res.getId(), res);
-                    replyCondition.signalAll();
-                } finally {
-                    ls.unlock();
-                }
+    private void initReceiverThread() throws IOException {
+        receiverThread = new Thread(() -> {
+            try{
+                while (true) {
+                    Frame res;
+                    res = Frame.deserialize(in);
 
-                if(res.getType()==FrameType.Get || res.getType()==FrameType.MultiGet){
-                    repliesToPrint.add(res);
-                }
+                    ls.lock();
+                    try {
+                        replies.put(res.getId(), res);
+                        replyCondition.signalAll();
+                    } finally {
+                        ls.unlock();
+                    }
 
-                if(res.getId()==-1) break;
+                    if(res.getType()==FrameType.Get || res.getType()==FrameType.MultiGet || res.getType()==FrameType.GetWhen){
+                        repliesToPrint.add(res);
+                    }
+
+                    if(res.getId()==-1) break;
+                }
+            }catch(IOException e){
+                throw new RuntimeException(e);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        });
+        receiverThread.start();
+        System.out.println("iniciei receiver thread");
+    }
+
+    private void shutdownReceiverThread(){
+        receiverThread.interrupt();
+
+        try {
+            receiverThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -74,20 +92,58 @@ public class Client {
         }
     }
 
-    private void executeThreadPool(Frame f, DataOutputStream out){
-        ls.lock();
-        try{
-            threadPool.execute(() -> {
-                try {
-                    f.serialize(out);
-                    out.flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
+    private void initWorkerThreads() {
+        for (int i = 0; i < workerThreads.length; i++) {
+            workerThreads[i] = new Thread(() -> {
+                while (true) {
+                    try {
+                        Frame frame;
+                        if(!frameQueue.isEmpty()){
+                            System.out.println("tem frame");
+                            lQueue.lock();
+                            try {
+                                frame = frameQueue.remove();
+                            }finally {
+                                lQueue.unlock();
+                            }
+                            frame.serialize(out);
+                            out.flush();
+                            System.out.println("mandei frame");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        break;
+                    }
                 }
             });
+            workerThreads[i].start();
+            System.out.println("iniciei worker thread "+i);
         }
-        finally {
-            ls.unlock();
+    }
+
+    public void shutdownWorkers() {
+
+        for (Thread worker : workerThreads) {
+            worker.interrupt();
+        }
+
+        frameQueue.clear();
+
+        for (Thread worker : workerThreads) {
+            try {
+                worker.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    public void addFrame(Frame frame) {
+        lQueue.lock();
+        try {
+            frameQueue.add(frame);
+        } finally {
+            lQueue.unlock();
         }
     }
 
@@ -104,7 +160,7 @@ public class Client {
         User u = new User(username,password);
         Frame f = new Frame(getAndIncrement(), FrameType.Login,false,u);
 
-        executeThreadPool(f,out);
+        addFrame(f);
 
         return (Boolean) awaitReply(f.getId());
     }
@@ -113,7 +169,12 @@ public class Client {
         User u = new User(username,password);
         Frame f = new Frame(getAndIncrement(), FrameType.Register,false,u);
 
-        executeThreadPool(f,out);
+        addFrame(f);
+        System.out.println("adicionei frame");
+
+        if(frameQueue.isEmpty())
+            System.out.println("adicionei mas continua vazio");
+
 
         return (boolean) (Boolean) awaitReply(f.getId());
     }
@@ -122,14 +183,14 @@ public class Client {
         PutOne p = new PutOne(key, value);
         Frame f = new Frame(getAndIncrement(), FrameType.Put,false,p);
 
-        executeThreadPool(f,out);
+        addFrame(f);
     }
 
     public int get(String key) {
         int i = getAndIncrement();
         Frame f = new Frame(i, FrameType.Get,false,key);
 
-        executeThreadPool(f,out);
+        addFrame(f);
 
         return i;
     }
@@ -137,14 +198,14 @@ public class Client {
     public void multiPut(Map<String,byte[]> pairs) {
         Frame f = new Frame(getAndIncrement(), FrameType.MultiPut,false,pairs);
 
-        executeThreadPool(f,out);
+        addFrame(f);
     }
 
     public int multiGet(Set<String> keys) {
         int i = getAndIncrement();
         Frame f = new Frame(i, FrameType.MultiGet,false,keys);
 
-        executeThreadPool(f,out);
+        addFrame(f);
 
         return i;
     }
@@ -154,7 +215,7 @@ public class Client {
         GetWhen g = new GetWhen(key, keyCond, valueCond);
         Frame f = new Frame(i, FrameType.GetWhen,false,g);
 
-        executeThreadPool(f,out);
+        addFrame(f);
 
         return i;
 
@@ -163,30 +224,28 @@ public class Client {
     public void exit() throws IOException, InterruptedException {
         Frame f = new Frame(-1, FrameType.Close,false,null);
 
-        executeThreadPool(f,out);
+        addFrame(f);
         awaitReply(-1);
 
-        threadPool.shutdown();
+        shutdownWorkers();
+        shutdownReceiverThread();
         socket.close();
+    }
+
+    public void start() throws IOException {
+        socket = new Socket(HOST,PORT);
+        out = new DataOutputStream(socket.getOutputStream());
+        in = new DataInputStream(socket.getInputStream());
+
+        initReceiverThread();
+        initWorkerThreads();
     }
 
     public static void main(String[] args) {
         try {
-            socket = new Socket(HOST,PORT);
-            out = new DataOutputStream(socket.getOutputStream());
-            in = new DataInputStream(socket.getInputStream());
-
             Client client = new Client();
-            Thread receiverThread = new Thread(() -> {
-                try {
-                    client.run();
-                } catch (IOException e) {
-                    System.out.println("### Receiver thread error: " + e.getMessage() + " ###");
-                    e.printStackTrace();
-                }
-            }, "ReceiverThread");
-            
-            receiverThread.start();
+
+            client.start();
 
             Client_Interface ci = new Client_Interface(client);
 

@@ -36,13 +36,16 @@ public class Server {
                 while (true) {
                     try {
                         Request request;
-                        lQueue.lock();
-                        try {
-                            request = requestQueue.remove();
-                        }finally {
-                            lQueue.unlock();
+                        if(!requestQueue.isEmpty()){
+                            lQueue.lock();
+                            try {
+                                request = requestQueue.remove();
+                                System.out.println("retirei request da queue");
+                            }finally {
+                                lQueue.unlock();
+                            }
+                            request.process();
                         }
-                        request.process();
                     } catch (Exception e) {
                         e.printStackTrace();
                         break;
@@ -57,6 +60,7 @@ public class Server {
         lQueue.lock();
         try {
             requestQueue.add(request);
+            System.out.println("adicionei request s");
         } finally {
             lQueue.unlock();
         }
