@@ -24,8 +24,10 @@ public class Connection {
     public void send(Frame f) throws IOException{
         ls.lock();
         try{
-            f.serialize(out);
-            out.flush();
+            if(!socket.isClosed()) {
+                f.serialize(out);
+                out.flush();
+            }
         }finally{
             ls.unlock();
         }
