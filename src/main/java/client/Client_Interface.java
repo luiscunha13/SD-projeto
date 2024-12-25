@@ -19,7 +19,7 @@ public class Client_Interface {
     }
 
     public void authenticationMenu() throws IOException, InterruptedException {
-        //clearTerminal();
+        clearTerminal();
         this.menu = new Menu(new String[]{
                 "AUTHENTICATION OPTIONS\n",
                 "Login",

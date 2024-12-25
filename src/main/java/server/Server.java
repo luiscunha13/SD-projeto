@@ -24,6 +24,7 @@ public class Server {
     private final int numThreads = 5;
     private Queue<Request> requestQueue = new LinkedList<>();
     private Lock lQueue = new ReentrantLock();
+    private final Condition notEmpty = lQueue.newCondition();
 
     public Server(int maxSessions) {
         this.maxSessions = maxSessions;
@@ -34,22 +35,26 @@ public class Server {
         for (int i = 0; i < workerThreads.length; i++) {
             workerThreads[i] = new Thread(() -> {
                 while (true) {
+                    Request request;
+                    lQueue.lock();
                     try {
-                        Request request;
-                        if(!requestQueue.isEmpty()){
-                            lQueue.lock();
-                            try {
-                                request = requestQueue.remove();
-                                System.out.println("retirei request da queue");
-                            }finally {
-                                lQueue.unlock();
-                            }
+                        while(requestQueue.isEmpty())
+                            notEmpty.await();
+                        request = requestQueue.remove();
+
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        lQueue.unlock();
+                    }
+
+                    try {
+                        if (request != null)
                             request.process();
-                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                         break;
-                    }
+                    };
                 }
             });
             workerThreads[i].start();
@@ -60,7 +65,7 @@ public class Server {
         lQueue.lock();
         try {
             requestQueue.add(request);
-            System.out.println("adicionei request s");
+            notEmpty.signalAll();
         } finally {
             lQueue.unlock();
         }

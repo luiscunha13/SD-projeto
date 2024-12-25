@@ -30,6 +30,7 @@ public class Client {
     private final Thread[] workerThreads = new Thread[5];
     private Queue<Frame> frameQueue = new LinkedList<>();
     private Lock lQueue = new ReentrantLock();
+    private final Condition notEmpty = lQueue.newCondition();
 
     private int getAndIncrement() {
         lockId.lock();
@@ -67,7 +68,6 @@ public class Client {
             }
         });
         receiverThread.start();
-        System.out.println("iniciei receiver thread");
     }
 
     private void shutdownReceiverThread(){
@@ -96,28 +96,31 @@ public class Client {
         for (int i = 0; i < workerThreads.length; i++) {
             workerThreads[i] = new Thread(() -> {
                 while (true) {
-                    try {
-                        Frame frame;
-                        if(!frameQueue.isEmpty()){
-                            System.out.println("tem frame");
-                            lQueue.lock();
-                            try {
-                                frame = frameQueue.remove();
-                            }finally {
-                                lQueue.unlock();
-                            }
-                            frame.serialize(out);
-                            out.flush();
-                            System.out.println("mandei frame");
+                        Frame frame = null;
+                        lQueue.lock();
+                        try {
+                            while (frameQueue.isEmpty())
+                                notEmpty.await();
+                            frame = frameQueue.remove();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        } finally {
+                            lQueue.unlock();
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        break;
-                    }
+
+                        try {
+                            if (frame != null) {
+                                frame.serialize(out);
+                                out.flush();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            break;
+                        }
                 }
             });
             workerThreads[i].start();
-            System.out.println("iniciei worker thread "+i);
         }
     }
 
@@ -142,6 +145,7 @@ public class Client {
         lQueue.lock();
         try {
             frameQueue.add(frame);
+            notEmpty.signalAll();
         } finally {
             lQueue.unlock();
         }
@@ -170,11 +174,6 @@ public class Client {
         Frame f = new Frame(getAndIncrement(), FrameType.Register,false,u);
 
         addFrame(f);
-        System.out.println("adicionei frame");
-
-        if(frameQueue.isEmpty())
-            System.out.println("adicionei mas continua vazio");
-
 
         return (boolean) (Boolean) awaitReply(f.getId());
     }

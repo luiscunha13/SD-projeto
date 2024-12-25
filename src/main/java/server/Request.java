@@ -46,7 +46,6 @@ class Request {
                         login = true;
 
                     connection.send(new Frame(id, FrameType.Register,true,login));
-                    System.out.println("processei frame");
                     break;
                 }
                 case FrameType.Put: { //put
