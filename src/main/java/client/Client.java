@@ -7,7 +7,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -186,8 +185,7 @@ public class Client {
                     e.printStackTrace();
                 }
             }, "ReceiverThread");
-
-            receiverThread.setDaemon(false); // Make sure it's not a daemon thread 
+            
             receiverThread.start();
 
             Client_Interface ci = new Client_Interface(client);
