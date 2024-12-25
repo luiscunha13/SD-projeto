@@ -4,6 +4,8 @@ import Connection.*;
 import database.Users;
 import database.Users_Database;
 
+import java.net.SocketException;
+
 class ClientHandler implements Runnable {
     private Connection con;
     private Users users;
@@ -19,9 +21,8 @@ class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-
-        while (true) {
-            try {
+        try {
+            while (true) {
                 Frame f = con.receive();
                 int id = f.getId();
                 if(f.getType()==FrameType.Close) {
@@ -30,9 +31,11 @@ class ClientHandler implements Runnable {
                     break;
                 }
                 server.addRequest(new Request(f, con, users, users_database));
-            } catch (Exception e) {
-                System.out.println(e);
             }
+        } catch (SocketException e) {
+            con.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         server.clientDisconnected();

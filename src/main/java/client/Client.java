@@ -5,6 +5,7 @@ import Connection.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.locks.Condition;
@@ -63,8 +64,12 @@ public class Client {
 
                     if(res.getId()==-1) break;
                 }
-            }catch(IOException e){
-                throw new RuntimeException(e);
+            } catch(IOException e){
+                System.err.println("Falha na ligação ao servidor. A encerrar o cliente.");
+                shutdownWorkers();
+                shutdownReceiverThread();
+                try {socket.close();} catch(IOException ignored){}
+                System.exit(1);
             }
         });
         receiverThread.start();
@@ -232,12 +237,18 @@ public class Client {
     }
 
     public void start() throws IOException {
-        socket = new Socket(HOST,PORT);
-        out = new DataOutputStream(socket.getOutputStream());
-        in = new DataInputStream(socket.getInputStream());
+        try {
+            socket = new Socket(HOST, PORT);
+            out = new DataOutputStream(socket.getOutputStream());
+            in = new DataInputStream(socket.getInputStream());
 
-        initReceiverThread();
-        initWorkerThreads();
+            initReceiverThread();
+            initWorkerThreads();
+        }
+        catch (ConnectException e){
+            System.err.println("Não foi possível conectar ao servidor.");
+            System.exit(1);
+        }
     }
 
     public static void main(String[] args) {
