@@ -19,7 +19,6 @@ class ClientHandler implements Runnable {
         this.server = server;
     }
 
-    @Override
     public void run() {
         try {
             while (true) {

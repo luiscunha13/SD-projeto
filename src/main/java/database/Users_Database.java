@@ -9,7 +9,6 @@ public class Users_Database {
     private Map<String, byte[]> users_database = new HashMap<>(); // key-data
     Lock rl = new ReentrantLock();
     Lock wl = new ReentrantLock();
-    Condition c = rl.newCondition();
     private Map<String, LinkedList<WaitingCondition>> waitingConditions = new HashMap<>();
 
     private static class WaitingCondition {

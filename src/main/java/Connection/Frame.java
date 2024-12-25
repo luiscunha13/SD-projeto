@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class Frame {
-
     private Integer id;
     private FrameType type; // 0-login 1-register 2-get 3-put 4-multiget 5-multiput
     private boolean answer; //false-cliente->server  true-server->client
@@ -39,7 +38,7 @@ public class Frame {
         out.writeByte(type.toByte());
         out.writeBoolean(answer);
         switch(type){
-            case Login: // o login e o registo mandam a mesma cena (username e password) e recebem na mesma um boolean
+            case Login:
             case Register:
                 if(answer)
                     out.writeBoolean((boolean) data);

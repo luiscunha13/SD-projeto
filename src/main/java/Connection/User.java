@@ -8,8 +8,6 @@ public class User {
     public String username;
     public String password;
 
-    //Lock l = new ReentrantLock(); ver se é preciso um lock para os gets
-
     public User(String username, String password){
         this.username = username;
         this.password = password;

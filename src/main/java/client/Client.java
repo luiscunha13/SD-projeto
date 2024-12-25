@@ -11,9 +11,6 @@ import java.util.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 
 public class Client {
     private static Socket socket = null;
@@ -21,14 +18,19 @@ public class Client {
     private static final int PORT = 6666;
     private static DataOutputStream out;
     private static DataInputStream in;
+
     private Lock ls = new ReentrantLock();
-    private Map<Integer,Frame> replies = new HashMap<>();
-    private Queue<Frame> repliesToPrint = new LinkedList<>();
     private Condition replyCondition = ls.newCondition();
+    private Map<Integer,Frame> replies = new HashMap<>();
+
+    private Queue<Frame> repliesToPrint = new LinkedList<>();
+
     private Lock lockId = new ReentrantLock();
-    private int idRequest = 0;
+    private int idRequest = -1;
+
     private Thread receiverThread;
     private final Thread[] workerThreads = new Thread[5];
+
     private Queue<Frame> frameQueue = new LinkedList<>();
     private Lock lQueue = new ReentrantLock();
     private final Condition notEmpty = lQueue.newCondition();
@@ -43,12 +45,11 @@ public class Client {
         return idRequest;
     }
 
-    private void initReceiverThread() throws IOException {
+    private void initReceiverThread() {
         receiverThread = new Thread(() -> {
             try{
                 while (true) {
-                    Frame res;
-                    res = Frame.deserialize(in);
+                    Frame res = Frame.deserialize(in);
 
                     ls.lock();
                     try {
@@ -77,7 +78,6 @@ public class Client {
 
     private void shutdownReceiverThread(){
         receiverThread.interrupt();
-
         try {
             receiverThread.join();
         } catch (InterruptedException e) {
@@ -101,7 +101,7 @@ public class Client {
         for (int i = 0; i < workerThreads.length; i++) {
             workerThreads[i] = new Thread(() -> {
                 while (true) {
-                        Frame frame = null;
+                        Frame frame;
                         lQueue.lock();
                         try {
                             while (frameQueue.isEmpty())
@@ -157,11 +157,8 @@ public class Client {
     }
 
     public List<Frame> getRepliesToPrint(){
-        List<Frame> rep = new ArrayList<>();
-
-        while(!repliesToPrint.isEmpty())
-            rep.add(repliesToPrint.poll());
-
+        List<Frame> rep = new ArrayList<>(repliesToPrint);
+        repliesToPrint.clear();
         return rep;
     }
 
@@ -222,7 +219,6 @@ public class Client {
         addFrame(f);
 
         return i;
-
     }
 
     public void exit() throws IOException, InterruptedException {
