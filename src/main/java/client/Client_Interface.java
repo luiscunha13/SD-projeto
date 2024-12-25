@@ -145,17 +145,15 @@ public class Client_Interface {
         System.out.println("READ MULTI DATA \n");
 
         Set<String> set = new HashSet<>();
+        System.out.print("Number of keys to read: ");
+        int n = sc.nextInt();
+        sc.nextLine();
         String input;
-        System.out.println("Enter key or write exit to stop:");
 
-        while(true){
+        for(int i = 0; i < n; i++){
             System.out.print("Key: ");
             input = sc.nextLine();
-            if(input.equals("exit"))
-                break;
-            else{
-                set.add(input);
-            }
+            set.add(input);
         }
 
         int id = client.multiGet(set);
@@ -172,18 +170,15 @@ public class Client_Interface {
 
         Map<String, byte[]> pairs = new HashMap<>();
         String key, dataString;
-        System.out.println("Enter key or write exit to stop:");
-
-        while(true){
+        System.out.print("Number of key/value pairs to read: ");
+        int n = sc.nextInt();
+        sc.nextLine();
+        for(int i = 0; i < n; i++){
             System.out.print("Key: ");
             key = sc.nextLine();
-            if(key.equals("exit"))
-                break;
-            else{
-                System.out.print("Data: ");
-                dataString = sc.nextLine();
-                pairs.put(key, dataString.getBytes());
-            }
+            System.out.print("Data: ");
+            dataString = sc.nextLine();
+            pairs.put(key, dataString.getBytes());
         }
 
         client.multiPut(pairs);
