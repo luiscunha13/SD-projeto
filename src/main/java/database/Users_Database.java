@@ -1,19 +1,18 @@
 package database;
 
 import java.util.*;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.*;
 
 public class Users_Database {
-    private Map<String, byte[]> users_database = new HashMap<>(); // key-data
-    Lock rl = new ReentrantLock();
-    Lock wl = new ReentrantLock();
-    private Map<String, LinkedList<WaitingCondition>> waitingConditions = new HashMap<>();
+    private Map<String, byte[]> users_database = new HashMap<>();
+    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final Lock readLock = rwLock.readLock();
+    private final Lock writeLock = rwLock.writeLock();
+    private final Map<String, LinkedList<WaitingCondition>> waitingConditions = new HashMap<>();
 
     private static class WaitingCondition {
-        byte[] expectedValue;
-        Condition condition;
+        final byte[] expectedValue;
+        final Condition condition;
         int waitingThreads;
 
         public WaitingCondition(byte[] expectedValue, Condition condition) {
@@ -28,128 +27,137 @@ public class Users_Database {
     }
 
     public void put(String key, byte[] value) {
-        wl.lock();
+        writeLock.lock();
         try {
             users_database.put(key, value);
-
-            LinkedList<WaitingCondition> conditions = waitingConditions.get(key);
-            if (conditions != null) {
-                for (WaitingCondition wc : conditions) {
-                    if (wc.match(value)) {
-                        wc.condition.signal();
-                    }
-                }
-            }
+            signalWaitingThreads(key, value);
         } finally {
-            wl.unlock();
+            writeLock.unlock();
         }
     }
 
     public byte[] get(String key) {
-        rl.lock();
+        readLock.lock();
         try {
-            if (users_database.containsKey(key))
-                return users_database.get(key);
+            return users_database.get(key);
         } finally {
-            rl.unlock();
+            readLock.unlock();
         }
-
-        return new byte[0];
     }
 
     public void multiPut(Map<String, byte[]> pairs) {
-        wl.lock();
+        writeLock.lock();
         try {
             users_database.putAll(pairs);
-
-            for(Map.Entry<String, byte[]> entry : pairs.entrySet()){
-                LinkedList<WaitingCondition> conditions = waitingConditions.get(entry.getKey());
-                if (conditions != null) {
-                    for (WaitingCondition wc : conditions) {
-                        if (wc.match(entry.getValue())) {
-                            wc.condition.signal();
-                        }
-                    }
-                }
+            // Sinalizar para cada par
+            for (Map.Entry<String, byte[]> entry : pairs.entrySet()) {
+                signalWaitingThreads(entry.getKey(), entry.getValue());
             }
-            users_database.putAll(pairs);
         } finally {
-            wl.unlock();
+            writeLock.unlock();
         }
     }
 
     public Map<String, byte[]> multiGet(Set<String> keys) {
-        Map<String, byte[]> m = new HashMap<>();
-        rl.lock();
+        Map<String, byte[]> result = new HashMap<>();
+        readLock.lock();
         try {
-            for (String s : keys)
-                if (users_database.containsKey(s))
-                    m.put(s, users_database.get(s));
-                else
-                    m.put(s, new byte[0]);
+            for (String key : keys) {
+                byte[] value = users_database.get(key);
+                if (value != null) {
+                    result.put(key, value);
+                } else {
+                    result.put(key, "null".getBytes());
+                }
+            }
+            return result;
         } finally {
-            rl.unlock();
+            readLock.unlock();
         }
-
-        return m;
     }
 
-    public byte[] getWhen(String key, String keyCond, byte[] valueCond){
-        WaitingCondition cond = null;
-
-        rl.lock();
-        try{
-            if(verifyCondition(keyCond, valueCond)) // aqui vê logo se por acaso a condição se verifica
+    public byte[] getWhen(String key, String keyCond, byte[] valueCond) {
+        readLock.lock();
+        try {
+            if (verifyCondition(keyCond, valueCond)) {
                 return users_database.get(key);
+            }
         } finally {
-            rl.unlock();
+            readLock.unlock();
         }
 
-        wl.lock();
-        try{ // criar uma lista de conditions (se ainda não existir) para meter no map de conditions
-            LinkedList<WaitingCondition> conditions = waitingConditions.computeIfAbsent(keyCond,l -> new LinkedList<>());
-            for(WaitingCondition c : conditions){  // ver se já há uma condição igual
-                if(c.match(valueCond)){
-                    cond = c;
-                    c.waitingThreads++;
+        WaitingCondition cond = null;
+        writeLock.lock();
+        try {
+            if (verifyCondition(keyCond, valueCond)) {
+                return users_database.get(key);
+            }
+
+            LinkedList<WaitingCondition> conditions = waitingConditions.computeIfAbsent(
+                    keyCond,
+                    k -> new LinkedList<>()
+            );
+
+             for (WaitingCondition existing : conditions) {
+                if (existing.match(valueCond)) {
+                    cond = existing;
+                    existing.waitingThreads++;
+                    break;
                 }
             }
 
-            if(cond == null){ // caso não haja nenhuma condição igual, criar uma e meter na lista
-                cond = new WaitingCondition(valueCond,wl.newCondition());
+            if (cond == null) {
+                cond = new WaitingCondition(valueCond, writeLock.newCondition());
                 conditions.add(cond);
             }
 
-            while(!verifyCondition(keyCond,valueCond)) //await
-                cond.condition.await();
-            
-            byte[] out;
-            rl.lock();
-            try{
-                out = users_database.get(key);
-            }finally {
-                rl.unlock();
+            WaitingCondition finalCond = cond;
+            try {
+                while (!verifyCondition(keyCond, valueCond)) {
+                    finalCond.condition.await();
+                }
+
+                byte[] result = users_database.get(key);
+
+                // Cleanup
+                finalCond.waitingThreads--;
+                if (finalCond.waitingThreads == 0) {
+                    conditions.remove(finalCond);
+                    if (conditions.isEmpty()) {
+                        waitingConditions.remove(keyCond);
+                    }
+                }
+
+                return result;
+            } catch (InterruptedException e) {
+                finalCond.waitingThreads--;
+                if (finalCond.waitingThreads == 0) {
+                    conditions.remove(finalCond);
+                    if (conditions.isEmpty()) {
+                        waitingConditions.remove(keyCond);
+                    }
+                }
+                Thread.currentThread().interrupt();
+                return null;
             }
-
-            cond.waitingThreads--;
-
-            if(cond.waitingThreads==0){  // remover as cenas se já não forem precisas
-                conditions.remove(cond);
-                if(conditions.isEmpty())
-                    waitingConditions.remove(keyCond);
-            }
-
-            return out;
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            return new byte[0];
         } finally {
-            wl.unlock();
+            writeLock.unlock();
+        }
+    }
+
+    private void signalWaitingThreads(String key, byte[] value) {
+        LinkedList<WaitingCondition> conditions = waitingConditions.get(key);
+        if (conditions != null) {
+            for (WaitingCondition wc : conditions) {
+                if (wc.match(value)) {
+                    wc.condition.signal();
+                }
+            }
         }
     }
 
     private boolean verifyCondition(String keyCond, byte[] valueCond) {
-        return Arrays.equals(users_database.get(keyCond), valueCond);
+        byte[] currentValue = users_database.get(keyCond);
+        return currentValue != null && Arrays.equals(currentValue, valueCond);
     }
 }

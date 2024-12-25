@@ -16,15 +16,16 @@ public class Server {
     private final Condition sessionAvailable = l.newCondition();
     private final int maxSessions;
     private int activeSessions = 0;
+
     private final Thread[] workerThreads;
-    private final int numThreads = 5;
+
     private Queue<Request> requestQueue = new LinkedList<>();
     private Lock lQueue = new ReentrantLock();
     private final Condition notEmpty = lQueue.newCondition();
 
     public Server(int maxSessions) {
         this.maxSessions = maxSessions;
-        this.workerThreads = new Thread[numThreads];
+        this.workerThreads = new Thread[5];
     }
 
     private void initWorkerThreads() {

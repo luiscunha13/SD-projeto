@@ -170,7 +170,7 @@ public class Client_Interface {
 
         Map<String, byte[]> pairs = new HashMap<>();
         String key, dataString;
-        System.out.print("Number of key/value pairs to read: ");
+        System.out.print("Number of key/value pairs to store: ");
         int n = sc.nextInt();
         sc.nextLine();
         for(int i = 0; i < n; i++){
