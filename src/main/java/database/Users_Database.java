@@ -46,16 +46,15 @@ public class Users_Database {
     }
 
     public byte[] get(String key) {
-        byte[] answer = null;
         rl.lock();
         try {
             if (users_database.containsKey(key))
-                answer = users_database.get(key);
+                return users_database.get(key);
         } finally {
             rl.unlock();
         }
 
-        return answer;
+        return new byte[0];
     }
 
     public void multiPut(Map<String, byte[]> pairs) {
@@ -81,14 +80,13 @@ public class Users_Database {
 
     public Map<String, byte[]> multiGet(Set<String> keys) {
         Map<String, byte[]> m = new HashMap<>();
-        String no = "null";
         rl.lock();
         try {
             for (String s : keys)
                 if (users_database.containsKey(s))
                     m.put(s, users_database.get(s));
                 else
-                    m.put(s, no.getBytes());
+                    m.put(s, new byte[0]);
         } finally {
             rl.unlock();
         }
@@ -103,7 +101,7 @@ public class Users_Database {
         try{
             if(verifyCondition(keyCond, valueCond)) // aqui vê logo se por acaso a condição se verifica
                 return users_database.get(key);
-        }finally {
+        } finally {
             rl.unlock();
         }
 
@@ -117,7 +115,7 @@ public class Users_Database {
                 }
             }
 
-            if(cond==null){ // caso não haja nenhuma condição igual, criar uma e meter na lista
+            if(cond == null){ // caso não haja nenhuma condição igual, criar uma e meter na lista
                 cond = new WaitingCondition(valueCond,wl.newCondition());
                 conditions.add(cond);
             }
@@ -145,15 +143,13 @@ public class Users_Database {
 
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return null;
+            return new byte[0];
         } finally {
             wl.unlock();
         }
     }
 
     private boolean verifyCondition(String keyCond, byte[] valueCond) {
-        byte[] currentValue = users_database.get(keyCond);
-        return currentValue != null && Arrays.equals(currentValue, valueCond);
+        return Arrays.equals(users_database.get(keyCond), valueCond);
     }
-
 }

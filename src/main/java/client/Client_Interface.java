@@ -230,30 +230,27 @@ public class Client_Interface {
         if(f.getType()== FrameType.Get){
             byte[] data = (byte[]) f.getData();
 
-            if(data==null)
+            if(data.length == 0)
                 System.out.println("The key does not exist");
             else {
-                String dataS = new String(data);
-                System.out.println("Data: " + dataS);
+                System.out.println("Data: " + new String(data));
             }
         }
         else if(f.getType()== FrameType.MultiGet){
             Map<String, byte[]> m = (Map<String, byte[]>) f.getData();
-            String aux;
             System.out.println();
 
             for (Map.Entry<String,byte[]> e: m.entrySet()) {
-                aux = new String(e.getValue());
-                if (aux.equals("null"))
+                byte[] data = (byte[]) f.getData();
+                if (data.length == 0)
                     System.out.println("The key does not exist");
                 else
-                    System.out.println("Key: " + e.getKey() + "   Data: " + aux);
+                    System.out.println("Key: " + e.getKey() + "   Data: " + new String(data));
             }
         }
         else {
             byte[] data = (byte[]) f.getData();
-            String dataS = new String(data);
-            System.out.println("Data: " + dataS);
+            System.out.println("Data: " + new String(data));
         }
 
         System.out.println();
