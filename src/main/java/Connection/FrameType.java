@@ -11,10 +11,12 @@ public enum FrameType {
     Close;
 
     public byte toByte() {
+        System.out.println("Type: " + this + " toByte: " + (byte) ordinal());
         return (byte) ordinal();
     }
 
     public static FrameType fromByte(byte type) {
+        System.out.println("From Byte: " + type);
         return switch (type) {
             case 0 -> Login;
             case 1 -> Register;
