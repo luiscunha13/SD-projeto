@@ -145,20 +145,27 @@ public class Client_Interface {
         System.out.println("READ MULTI DATA \n");
 
         Set<String> set = new HashSet<>();
-        System.out.print("Number of keys to read: ");
-        int n = sc.nextInt();
-        sc.nextLine();
-        String input;
 
+        int n;
+        System.out.print("Number of keys to read: ");
+        try {
+            n = sc.nextInt();
+        } catch (InputMismatchException e) {
+            n = -1;
+        }
+        sc.nextLine();
+
+        String input;
         for(int i = 0; i < n; i++){
             System.out.print("Key: ");
             input = sc.nextLine();
             set.add(input);
         }
 
-        int id = client.multiGet(set);
-
-        System.out.println("\nRequest id: ["+id +"]");
+        if(n > 0) {
+            int id = client.multiGet(set);
+            System.out.println("\nRequest id: [" + id + "]");
+        }
 
         pressAnyKey();
         clientMenu();
@@ -170,9 +177,15 @@ public class Client_Interface {
 
         Map<String, byte[]> pairs = new HashMap<>();
         String key, dataString;
+        int n;
         System.out.print("Number of key/value pairs to store: ");
-        int n = sc.nextInt();
+        try {
+            n = sc.nextInt();
+        } catch (InputMismatchException e) {
+            n = -1;
+        }
         sc.nextLine();
+
         for(int i = 0; i < n; i++){
             System.out.print("Key: ");
             key = sc.nextLine();
@@ -181,9 +194,10 @@ public class Client_Interface {
             pairs.put(key, dataString.getBytes());
         }
 
-        client.multiPut(pairs);
-
-        System.out.println("\nValues stored successfully");
+        if(n > 0) {
+            client.multiPut(pairs);
+            System.out.println("\nValues stored successfully");
+        }
 
         pressAnyKey();
         clientMenu();
