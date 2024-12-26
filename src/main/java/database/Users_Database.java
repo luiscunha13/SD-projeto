@@ -116,6 +116,9 @@ public class Users_Database {
                         waitingConditions.remove(keyCond);
                     }
                 }
+                else if (cond.waitingThreads > 0){
+                    cond.waitingForValue.signal();
+                }
 
                 return result;
             }
