@@ -120,7 +120,7 @@ public class Users_Database {
                     cond.waitingForValue.signal();
                 }
 
-                return result;
+                return result == null ? new byte[0] : result;
             }
             catch (InterruptedException e) {
                 cond.waitingThreads--;
@@ -131,7 +131,7 @@ public class Users_Database {
                     }
                 }
                 Thread.currentThread().interrupt();
-                return null;
+                return new byte[0];
             }
         } finally {
             writeLock.unlock();
@@ -150,7 +150,6 @@ public class Users_Database {
     }
 
     private boolean verifyCondition(String keyCond, byte[] valueCond) {
-        byte[] currentValue = users_database.get(keyCond);
-        return currentValue != null && Arrays.equals(currentValue, valueCond);
+        return Arrays.equals(users_database.get(keyCond), valueCond);
     }
 }
