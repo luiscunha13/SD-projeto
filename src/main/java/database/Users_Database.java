@@ -12,12 +12,12 @@ public class Users_Database {
 
     private static class WaitingCondition {
         final byte[] expectedValue;
-        final Condition condition;
+        final Condition waitingForValue;
         int waitingThreads;
 
         public WaitingCondition(byte[] expectedValue, Condition condition) {
             this.expectedValue = expectedValue;
-            this.condition = condition;
+            this.waitingForValue = condition;
             this.waitingThreads = 1;
         }
 
@@ -77,15 +77,6 @@ public class Users_Database {
     }
 
     public byte[] getWhen(String key, String keyCond, byte[] valueCond) {
-        readLock.lock();
-        try {
-            if (verifyCondition(keyCond, valueCond)) {
-                return users_database.get(key);
-            }
-        } finally {
-            readLock.unlock();
-        }
-
         WaitingCondition cond = null;
         writeLock.lock();
         try {
@@ -111,28 +102,27 @@ public class Users_Database {
                 conditions.add(cond);
             }
 
-            WaitingCondition finalCond = cond;
             try {
                 while (!verifyCondition(keyCond, valueCond)) {
-                    finalCond.condition.await();
+                    cond.waitingForValue.await();
                 }
 
                 byte[] result = users_database.get(key);
 
-                // Cleanup
-                finalCond.waitingThreads--;
-                if (finalCond.waitingThreads == 0) {
-                    conditions.remove(finalCond);
+                cond.waitingThreads--;
+                if (cond.waitingThreads == 0) {
+                    conditions.remove(cond);
                     if (conditions.isEmpty()) {
                         waitingConditions.remove(keyCond);
                     }
                 }
 
                 return result;
-            } catch (InterruptedException e) {
-                finalCond.waitingThreads--;
-                if (finalCond.waitingThreads == 0) {
-                    conditions.remove(finalCond);
+            }
+            catch (InterruptedException e) {
+                cond.waitingThreads--;
+                if (cond.waitingThreads == 0) {
+                    conditions.remove(cond);
                     if (conditions.isEmpty()) {
                         waitingConditions.remove(keyCond);
                     }
@@ -150,7 +140,7 @@ public class Users_Database {
         if (conditions != null) {
             for (WaitingCondition wc : conditions) {
                 if (wc.match(value)) {
-                    wc.condition.signal();
+                    wc.waitingForValue.signal();
                 }
             }
         }
