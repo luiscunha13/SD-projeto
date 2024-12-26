@@ -13,19 +13,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Client {
-    private static Socket socket = null;
-    private static final String HOST = "localhost";
-    private static final int PORT = 6666;
-    private static DataOutputStream out;
-    private static DataInputStream in;
+    private Socket socket = null;
+    private final String HOST = "localhost";
+    private final int PORT = 6666;
+    private Connection con;
 
-    private Lock ls = new ReentrantLock();
-    private Condition replyCondition = ls.newCondition();
+    private Lock lReply = new ReentrantLock();
+    private Condition replyCondition = lReply.newCondition();
     private Map<Integer,Frame> replies = new HashMap<>();
 
     private Queue<Frame> repliesToPrint = new LinkedList<>();
 
-    private Lock lockId = new ReentrantLock();
+    private Lock lId = new ReentrantLock();
     private int idRequest = -1;
 
     private Thread receiverThread;
@@ -36,11 +35,11 @@ public class Client {
     private final Condition notEmpty = lQueue.newCondition();
 
     private int getAndIncrement() {
-        lockId.lock();
+        lId.lock();
         try{
             idRequest++;
         } finally {
-            lockId.unlock();
+            lId.unlock();
         }
         return idRequest;
     }
@@ -49,14 +48,14 @@ public class Client {
         receiverThread = new Thread(() -> {
             try{
                 while (true) {
-                    Frame res = Frame.deserialize(in);
+                    Frame res = con.receive();
 
-                    ls.lock();
+                    lReply.lock();
                     try {
                         replies.put(res.getId(), res);
                         replyCondition.signalAll();
                     } finally {
-                        ls.unlock();
+                        lReply.unlock();
                     }
 
                     if(res.getType()==FrameType.Get || res.getType()==FrameType.MultiGet || res.getType()==FrameType.GetWhen){
@@ -86,14 +85,14 @@ public class Client {
     }
 
     private Object awaitReply(int requestId) throws InterruptedException {
-        ls.lock();
+        lReply.lock();
         try {
             while (!replies.containsKey(requestId)) {
                 replyCondition.await();
             }
             return replies.get(requestId).getData();
         } finally {
-            ls.unlock();
+            lReply.unlock();
         }
     }
 
@@ -116,8 +115,7 @@ public class Client {
 
                         try {
                             if (frame != null) {
-                                frame.serialize(out);
-                                out.flush();
+                                con.send(frame);
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -150,7 +148,7 @@ public class Client {
         lQueue.lock();
         try {
             frameQueue.add(frame);
-            notEmpty.signalAll();
+            notEmpty.signal();
         } finally {
             lQueue.unlock();
         }
@@ -235,8 +233,8 @@ public class Client {
     public void start() throws IOException {
         try {
             socket = new Socket(HOST, PORT);
-            out = new DataOutputStream(socket.getOutputStream());
-            in = new DataInputStream(socket.getInputStream());
+
+            con = new Connection(socket);
 
             initReceiverThread();
             initWorkerThreads();

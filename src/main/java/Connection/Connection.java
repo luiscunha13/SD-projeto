@@ -9,7 +9,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Connection {
     Socket socket;
-    
     DataInputStream in;
     DataOutputStream out;
     Lock ls = new ReentrantLock();
