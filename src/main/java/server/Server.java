@@ -62,7 +62,7 @@ public class Server {
         lQueue.lock();
         try {
             requestQueue.add(request);
-            notEmpty.signalAll();
+            notEmpty.signal();
         } finally {
             lQueue.unlock();
         }
