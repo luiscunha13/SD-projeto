@@ -43,7 +43,9 @@ public class Connection {
 
     public void close(){
         try {
-            this.socket.close();
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

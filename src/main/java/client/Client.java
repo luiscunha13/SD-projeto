@@ -9,7 +9,6 @@ import java.util.*;
 import java.util.concurrent.locks.*;
 
 public class Client {
-    private Socket socket = null;
     private final String HOST = "localhost";
     private final int PORT = 6666;
     private Connection con;
@@ -48,16 +47,19 @@ public class Client {
             try{
                 while (true) {
                     Frame res = con.receive();
+                    FrameType type = res.getType();
 
                     lReply.lock();
                     try {
-                        replies.put(res.getId(), res);
-                        replyCondition.signalAll();
+                        if(type == FrameType.Login || type == FrameType.Register || type == FrameType.Close) {
+                            replies.put(res.getId(), res);
+                            replyCondition.signal();
+                        }
                     } finally {
                         lReply.unlock();
                     }
 
-                    if(res.getType()==FrameType.Get || res.getType()==FrameType.MultiGet || res.getType()==FrameType.GetWhen){
+                    if(type == FrameType.Get || type == FrameType.MultiGet || type == FrameType.GetWhen){
                         repliesToPrint.add(res);
                     }
 
@@ -67,7 +69,7 @@ public class Client {
                 System.err.println("Falha na ligação ao servidor. A encerrar o cliente.");
                 shutdownWorkers();
                 shutdownReceiverThread();
-                try {socket.close();} catch(IOException ignored){}
+                con.close();
                 System.exit(1);
             }
         });
@@ -248,12 +250,12 @@ public class Client {
 
         shutdownWorkers();
         shutdownReceiverThread();
-        socket.close();
+        con.close();
     }
 
     public void start() throws IOException {
         try {
-            socket = new Socket(HOST, PORT);
+            Socket socket = new Socket(HOST, PORT);
 
             con = new Connection(socket);
 
