@@ -12,10 +12,8 @@ class ClientHandler implements Runnable {
     private Users_Database users_database;
     private Server server;
 
-    public ClientHandler(Connection con, Users users, Users_Database users_database, Server server) {
+    public ClientHandler(Connection con, Server server) {
         this.con = con;
-        this.users = users;
-        this.users_database = users_database;
         this.server = server;
     }
 
@@ -29,7 +27,7 @@ class ClientHandler implements Runnable {
                     con.close();
                     break;
                 }
-                server.addRequest(new Request(f, con, users, users_database));
+                server.addRequest(new Request(f, con));
             }
         } catch (SocketException e) {
             con.close();

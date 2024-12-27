@@ -9,23 +9,19 @@ import java.util.Set;
 class Request {
     private final Frame frame;
     private final Connection connection;
-    private final Users users;
-    private final Users_Database users_database;
     public boolean login = false; //muda para true quando iniciar sessão
     //false ->mostra as opções de registar e de login , true -> mostra o resto das opções
 
-    public Request(Frame frame, Connection connection, Users users, Users_Database usersDatabase) {
+    public Request(Frame frame, Connection connection) {
         this.frame = frame;
         this.connection = connection;
-        this.users = users;
-        this.users_database = usersDatabase;
     }
 
     public Connection getConnection() {
         return this.connection;
     }
 
-    public void process() {
+    public void process(Users users, Users_Database users_database) {
         int id = frame.getId();
         try {
             switch (frame.getType()) {

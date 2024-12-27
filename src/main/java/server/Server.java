@@ -12,6 +12,9 @@ import java.util.Queue;
 import java.util.concurrent.locks.*;
 
 public class Server {
+
+    private Users users;
+    private Users_Database users_database;
     Lock l = new ReentrantLock();
     private final Condition sessionAvailable = l.newCondition();
     private final int maxSessions;
@@ -47,7 +50,7 @@ public class Server {
 
                     try {
                         if (request != null)
-                            request.process();
+                            request.process(users, users_database);
                     } catch (Exception e) {
                         e.printStackTrace();
                         break;
@@ -95,8 +98,8 @@ public class Server {
 
         try{
             ss = new ServerSocket(6666);
-            Users users = new Users();
-            Users_Database users_database = new Users_Database();
+            users = new Users();
+            users_database = new Users_Database();
             initWorkerThreads();
 
             System.out.println("Server listening for clients on port: " + ss.getLocalPort());
@@ -107,7 +110,7 @@ public class Server {
 
                 clientConnect();
 
-                new Thread(new ClientHandler(con,users,users_database,this)).start();
+                new Thread(new ClientHandler(con, this)).start();
             }
 
         } catch(Exception e){
