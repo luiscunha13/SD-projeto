@@ -2,8 +2,6 @@ package client;
 
 import Connection.*;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
@@ -187,7 +185,7 @@ public class Client {
 
         addFrame(f);
 
-        return (Boolean) awaitReply(f.getId());
+        return (boolean) awaitReply(f.getId());
     }
 
     public boolean register(String username, String password) throws InterruptedException {
@@ -196,7 +194,7 @@ public class Client {
 
         addFrame(f);
 
-        return (boolean) (Boolean) awaitReply(f.getId());
+        return (boolean) awaitReply(f.getId());
     }
 
     public void put(String key, byte[] value) {

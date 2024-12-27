@@ -49,7 +49,6 @@ public class Users_Database {
         writeLock.lock();
         try {
             users_database.putAll(pairs);
-            // Sinalizar para cada par
             for (Map.Entry<String, byte[]> entry : pairs.entrySet()) {
                 signalWaitingThreads(entry.getKey(), entry.getValue());
             }

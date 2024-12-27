@@ -35,7 +35,7 @@ public class Client_Interface {
 
     public void login() throws IOException, InterruptedException {
         clearTerminal();
-        System.out.println("LOG IN \n");
+        System.out.println("LOG IN\n");
 
         System.out.println("Username: ");
         String username = sc.nextLine();
@@ -54,7 +54,7 @@ public class Client_Interface {
 
     public void register() throws IOException, InterruptedException {
         clearTerminal();
-        System.out.println("REGISTER \n");
+        System.out.println("REGISTER\n");
 
         System.out.print("Username: ");
         String username = sc.nextLine();
@@ -108,14 +108,14 @@ public class Client_Interface {
 
     public void readData() throws IOException, InterruptedException {
         clearTerminal();
-        System.out.println("READ DATA \n");
+        System.out.println("READ DATA\n");
 
         System.out.print("Key: ");
         String key = sc.nextLine();
 
         int id = client.get(key);
 
-        System.out.println("\nRequest id: ["+id +"]");
+        System.out.println("\nRequest id: ["+id+"]");
 
 
         pressAnyKey();
@@ -124,7 +124,7 @@ public class Client_Interface {
 
     public void storeData() throws IOException, InterruptedException {
         clearTerminal();
-        System.out.println("STORE DATA \n");
+        System.out.println("STORE DATA\n");
 
         System.out.print("Key: ");
         String key = sc.nextLine();
@@ -134,7 +134,7 @@ public class Client_Interface {
 
         client.put(key, dataString.getBytes());
 
-        System.out.println("\nValues stored successfully");
+        System.out.println("\nValue stored successfully");
 
         pressAnyKey();
         clientMenu();
@@ -142,7 +142,7 @@ public class Client_Interface {
 
     public void readMultiData() throws IOException, InterruptedException {
         clearTerminal();
-        System.out.println("READ MULTI DATA \n");
+        System.out.println("READ MULTI DATA\n");
 
         Set<String> set = new HashSet<>();
 
@@ -164,7 +164,7 @@ public class Client_Interface {
 
         if(n > 0) {
             int id = client.multiGet(set);
-            System.out.println("\nRequest id: [" + id + "]");
+            System.out.println("\nRequest id: ["+id+"]");
         }
 
         pressAnyKey();
@@ -173,7 +173,7 @@ public class Client_Interface {
 
     public void storeMultiData() throws IOException, InterruptedException {
         clearTerminal();
-        System.out.println("STORE MULTI DATA \n");
+        System.out.println("STORE MULTI DATA\n");
 
         Map<String, byte[]> pairs = new HashMap<>();
         String key, dataString;
@@ -205,7 +205,7 @@ public class Client_Interface {
 
     public void getWhen() throws IOException, InterruptedException {
         clearTerminal();
-        System.out.println("GETWHEN \n");
+        System.out.println("GETWHEN\n");
 
         System.out.print("Key: ");
         String key = sc.nextLine();
@@ -218,7 +218,7 @@ public class Client_Interface {
 
         int id = client.getWhen(key, keyCond, valuecond.getBytes());
 
-        System.out.println("\nRequest id: ["+id +"]");
+        System.out.println("\nRequest id: ["+id+"]");
 
         pressAnyKey();
         clientMenu();
@@ -228,7 +228,7 @@ public class Client_Interface {
         List<Frame> l = client.getRepliesToPrint();
 
         clearTerminal();
-        System.out.println("READ REPLIES \n");
+        System.out.println("READ REPLIES\n");
 
         for(Frame f: l)
             printReply(f);
