@@ -8,9 +8,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.util.*;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.*;
 
 public class Client {
     private Socket socket = null;
@@ -33,6 +31,9 @@ public class Client {
     private Queue<Frame> frameQueue = new LinkedList<>();
     private Lock lQueue = new ReentrantLock();
     private final Condition notEmpty = lQueue.newCondition();
+
+    private Lock getFrameKeysLock = new ReentrantLock();
+    private Map<Integer, String> getFrameKeys = new HashMap<>();
 
     private int getAndIncrement() {
         lId.lock();
@@ -154,6 +155,26 @@ public class Client {
         }
     }
 
+    private void addKey(int id, String key) {
+        getFrameKeysLock.lock();
+        try{
+            getFrameKeys.put(id, key);
+        } finally {
+            getFrameKeysLock.unlock();
+        }
+    }
+
+    public String consultKey(int id) {
+        getFrameKeysLock.lock();
+        try {
+            String key = getFrameKeys.get(id);
+            getFrameKeys.remove(id);
+            return key;
+        } finally {
+            getFrameKeysLock.unlock();
+        }
+    }
+
     public List<Frame> getRepliesToPrint(){
         List<Frame> rep = new ArrayList<>(repliesToPrint);
         repliesToPrint.clear();
@@ -189,6 +210,7 @@ public class Client {
         int i = getAndIncrement();
         Frame f = new Frame(i, FrameType.Get,false,key);
 
+        addKey(i, key);
         addFrame(f);
 
         return i;
@@ -214,6 +236,7 @@ public class Client {
         GetWhen g = new GetWhen(key, keyCond, valueCond);
         Frame f = new Frame(i, FrameType.GetWhen,false,g);
 
+        addKey(i, key);
         addFrame(f);
 
         return i;

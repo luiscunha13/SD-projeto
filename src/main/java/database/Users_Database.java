@@ -64,11 +64,7 @@ public class Users_Database {
         try {
             for (String key : keys) {
                 byte[] value = users_database.get(key);
-                if (value != null) {
-                    result.put(key, value);
-                } else {
-                    result.put(key, "null".getBytes());
-                }
+                result.put(key, value);
             }
             return result;
         } finally {
@@ -120,7 +116,7 @@ public class Users_Database {
                     cond.waitingForValue.signal();
                 }
 
-                return result == null ? new byte[0] : result;
+                return result;
             }
             catch (InterruptedException e) {
                 cond.waitingThreads--;
@@ -131,7 +127,7 @@ public class Users_Database {
                     }
                 }
                 Thread.currentThread().interrupt();
-                return new byte[0];
+                return null;
             }
         } finally {
             writeLock.unlock();

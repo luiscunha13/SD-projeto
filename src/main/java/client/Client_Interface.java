@@ -247,7 +247,7 @@ public class Client_Interface {
             for (Map.Entry<String,byte[]> e: m.entrySet()) {
                 byte[] data = (byte[]) f.getData();
                 if (data.length == 0)
-                    System.out.println("The key does not exist.");
+                    System.out.printf("The key %s does not exist.\n", e.getKey());
                 else
                     System.out.println("Key: " + e.getKey() + "   Data: " + new String(data));
             }
@@ -255,10 +255,10 @@ public class Client_Interface {
         else {
             byte[] data = (byte[]) f.getData();
             if (data.length == 0) {
-                System.out.println("The key does not exist.");
+                System.out.printf("The key %s does not exist.\n", client.consultKey(f.getId()));
             }
             else {
-                System.out.println("Data: " + new String(data));
+                System.out.printf("Key: %s -> Data: %s\n", client.consultKey(f.getId()), new String(data));
             }
         }
 

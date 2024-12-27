@@ -52,8 +52,12 @@ public class Frame {
             case Get:
                 if(answer){
                     byte[] value = (byte[]) data;
-                    out.writeInt(value.length);
-                    out.write(value);
+                    if(value == null){
+                        out.writeInt(0);
+                    } else {
+                        out.writeInt(value.length);
+                        out.write(value);
+                    }
                 }
                 else
                     out.writeUTF((String) data);
@@ -71,8 +75,12 @@ public class Frame {
             case GetWhen:
                 if(answer){
                     byte[] value = (byte[]) data;
-                    out.writeInt(value.length);
-                    out.write(value);
+                    if(value == null){
+                        out.writeInt(0);
+                    } else {
+                        out.writeInt(value.length);
+                        out.write(value);
+                    }
                 }
                 else
                     GetWhen.send((GetWhen) data, out);
@@ -150,8 +158,12 @@ public class Frame {
             out.writeUTF(entry.getKey());
 
             byte[] value = entry.getValue();
-            out.writeInt(value.length);
-            out.write(value);
+            if(value == null){
+                out.writeInt(0);
+            } else {
+                out.writeInt(value.length);
+                out.write(value);
+            }
         }
     }
 
