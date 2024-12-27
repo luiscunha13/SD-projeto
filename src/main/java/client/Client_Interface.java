@@ -238,18 +238,20 @@ public class Client_Interface {
     }
 
     public void printReply(Frame f){
-        System.out.println("["+f.getId()+"]");
+        System.out.println("Request ["+f.getId()+"]");
 
         if(f.getType()== FrameType.MultiGet){
             Map<String, byte[]> m = (Map<String, byte[]>) f.getData();
             System.out.println();
 
             for (Map.Entry<String,byte[]> e: m.entrySet()) {
-                byte[] data = (byte[]) f.getData();
-                if (data.length == 0)
+                byte[] data = e.getValue();
+                if (data.length == 0){
                     System.out.printf("The key %s does not exist.\n", e.getKey());
-                else
-                    System.out.println("Key: " + e.getKey() + "   Data: " + new String(data));
+                }
+                else {
+                    System.out.printf("Key: %s -> Data: %s\n", e.getKey(), new String(data));
+                }
             }
         }
         else {
