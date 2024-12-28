@@ -28,7 +28,7 @@ public class Server {
 
     public Server(int maxSessions) {
         this.maxSessions = maxSessions;
-        this.workerThreads = new Thread[5];
+        this.workerThreads = new Thread[maxSessions*3];
     }
 
     private void initWorkerThreads() {
